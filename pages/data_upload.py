@@ -12,60 +12,57 @@ def data_extraction(file_path):
     try:
         df = pd.read_csv(file_path)
     except FileNotFoundError:
-        return json.dumps([
-            {"metricName": "error", "value": "File not found", "unit": None}
-        ])
+        return {"error": "File not found"}
     except Exception as e:
-        return json.dumps([
-            {"metricName": "error", "value": f"Error reading file: {e}", "unit": None}
-        ])
+        return {"error": f"Error reading file: {e}"}
 
-    # Check for essential columns
-    has_sales = 'Sales' in df.columns
-    has_profit = 'Profit' in df.columns
-    has_order_id = 'Order ID' in df.columns
-    
-    # 1. Calculate Total Sales
-    total_sales = df['Sales'].sum() if has_sales else None
+    # Validate columns
+    required_cols = ['Sales', 'Profit', 'Order ID']
+    for col in required_cols:
+        if col not in df.columns:
+            return {"error": f"Missing required column: {col}"}
 
-    # 2. Calculate Total Profit
-    total_profit = df['Profit'].sum() if has_profit else None
+    # Compute KPIs
+    total_sales = df['Sales'].sum()
+    total_profit = df['Profit'].sum()
+    num_orders = df['Order ID'].nunique()
+    gross_margin = round((total_profit / total_sales) * 100, 2) if total_sales != 0 else 0
 
-    # 3. Calculate Number of Orders (unique Order IDs)
-    number_of_orders = df['Order ID'].nunique() if has_order_id else None
+    # Sales trend over time (if date exists)
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        sales_trend = (
+            df.groupby(df['Date'].dt.to_period('M'))['Sales']
+            .sum()
+            .reset_index()
+            .sort_values('Date')
+        )
+        sales_trend['Date'] = sales_trend['Date'].astype(str)
+    else:
+        sales_trend = None
 
-    # 4. Calculate Gross Margin
-    # Gross Margin = (Total Profit / Total Sales) * 100
-    gross_margin = None
-    if total_profit is not None and total_sales is not None and total_sales != 0:
-        gross_margin = (total_profit / total_sales) * 100
-        # Round the margin percentage for presentation
-        gross_margin = round(gross_margin, 2)
-    
-    # --- Format the Output as a JSON Array ---
-    
-    metrics = [
-        {
-            "metricName": "total sales",
-            "value": round(total_sales, 2) if total_sales is not None else None,
-            "unit": "$" if total_sales is not None else None
-        },
-        {
-            "metricName": "total profit",
-            "value": round(total_profit, 2) if total_profit is not None else None,
-            "unit": "$" if total_profit is not None else None
-        },
-        {
-            "metricName": "number of orders",
-            "value": number_of_orders,
-            "unit": "orders" if number_of_orders is not None else None
-        },
-        {
-            "metricName": "gross margin",
-            "value": gross_margin,
-            "unit": "%" if gross_margin is not None else None
-        }
-    ]
+    # Top products by sales (if Product column exists)
+    if 'Product' in df.columns:
+        top_products = (
+            df.groupby('Product')['Sales']
+            .sum()
+            .sort_values(ascending=False)
+            .head(5)
+            .reset_index()
+        )
+    else:
+        top_products = None
+
+    # Store metrics
+    metrics = {
+        "total_sales": round(total_sales, 2),
+        "total_profit": round(total_profit, 2),
+        "num_orders": int(num_orders),
+        "gross_margin": gross_margin,
+        "sales_trend": sales_trend,
+        "top_products": top_products
+    }
+
     return metrics
     
 
