@@ -2,3 +2,4 @@ venv/
 .venv
 tmp/
 _pycache_/
+.env

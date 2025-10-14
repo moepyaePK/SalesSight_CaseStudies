@@ -1,10 +1,42 @@
+import io
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import openai
+import os
+from dotenv import load_dotenv
+from dotenv import load_dotenv
+from groq import Groq
+import altair as alt
 import numpy as np
 from datetime import datetime, timedelta
-import altair as alt
+
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
+
+# ---- Load CSV ----
+if "save_path" not in st.session_state:
+    st.warning("Please upload a CSV file first.")
+    st.stop()
+
+file_path = st.session_state.save_path
+df = pd.read_csv(file_path)
+
+# ---- Summaries ----
+product_summary = df.groupby('Product')['Sales'].sum().reset_index()
+data_str = product_summary.to_csv(index=False)
+
+# ---- Load Environment Variables ----
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    st.error("❌ GROQ_API_KEY is not set in your environment variables.")
+    st.stop()
+
+client = Groq(api_key=GROQ_API_KEY)
+
+st.title("Sales Forecasting Dashboard (Groq LLaMA 3.3-7B)")
+
 
 st.markdown(
     """
@@ -147,63 +179,130 @@ with left_col:
     st.markdown("<strong>Forecast Target</strong>", unsafe_allow_html=True)
     product = st.selectbox("", ["All Products", "Top Products", "Single Product"])
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.button("✨ Generate Analytics")
-    st.markdown("</div>", unsafe_allow_html=True)
+
+# with right_col:
+
+#     st.markdown("<strong>Sales Trend</strong>", unsafe_allow_html=True)
+#     st.markdown("<div style='color:#6b7280;margin-bottom:8px;'>Actual Sales Data vs Forecast Sales</div>", unsafe_allow_html=True)
+    
+#     rng_actual = pd.date_range(end=datetime.today(), periods=15)
+#     actual = (np.sin(np.linspace(0, 1.5, 15)) + 1.5) * 50000 + np.linspace(80000, 60000, 15)
+
+#     forecast_days = int(main_label.split()[0])
+#     rng_forecast = pd.date_range(start=datetime.today() + timedelta(days=1), periods=forecast_days)
+#     forecast = actual[-1] * (1 + np.linspace(0, 0.08, forecast_days))
+
+#     df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
+#     df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
+#     df = pd.concat([df_actual, df_forecast])
+
+#     base = alt.Chart(df).encode(
+#         x=alt.X('date:T', axis=alt.Axis(title=None, format='%d %b'))
+#     )
+#     line = base.mark_line().encode(
+#         y='Sales:Q',
+#         color=alt.Color(
+#             'Type:N',
+#             scale=alt.Scale(domain=['Actual','Forecast'], range=['#1E61D4','#34C759']),
+#             legend=alt.Legend(title=None, orient='top')
+#         ),
+#         strokeDash=alt.condition(alt.datum.Type=='Forecast', alt.value([4,2]), alt.value([]))
+#     )
+
+#     points_actual = df_actual.copy()
+#     points_actual_chart = alt.Chart(points_actual).mark_point(filled=True, size=10, color='black').encode(
+#         x='date:T',
+#         y='Sales:Q'
+#     )
+#     if forecast_days > 30:
+#         points_forecast = df_forecast.iloc[::3, :]  
+#     else:
+#         points_forecast = df_forecast
+
+#     points_forecast_chart = alt.Chart(points_forecast).mark_point(filled=True, size=10, color='black').encode(
+#         x='date:T',
+#         y='Sales:Q'
+#     )
+#     chart = (line + points_actual_chart + points_forecast_chart).properties(height=320)
+#     st.altair_chart(chart, use_container_width=True)
+    
+#     # st.markdown("</div>", unsafe_allow_html=True)
+
+#     st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
+#     st.write("""
+#     • Review products with declining forecasts and consider promotions.\n
+#     • Rebalance inventory for items with increasing forecast trends to avoid stockouts.\n
+#     • Investigate external factors (seasonality, events) affecting dips in sales and prepare targeted campaigns.
+#     """)
+#     st.markdown("</div>", unsafe_allow_html=True)
+
+generate_btn = st.button("🔮 Generate Forecast")
 
 with right_col:
-
     st.markdown("<strong>Sales Trend</strong>", unsafe_allow_html=True)
     st.markdown("<div style='color:#6b7280;margin-bottom:8px;'>Actual Sales Data vs Forecast Sales</div>", unsafe_allow_html=True)
-    
-    rng_actual = pd.date_range(end=datetime.today(), periods=15)
-    actual = (np.sin(np.linspace(0, 1.5, 15)) + 1.5) * 50000 + np.linspace(80000, 60000, 15)
 
-    forecast_days = int(main_label.split()[0])
-    rng_forecast = pd.date_range(start=datetime.today() + timedelta(days=1), periods=forecast_days)
-    forecast = actual[-1] * (1 + np.linspace(0, 0.08, forecast_days))
+    if generate_btn:
+        try:
 
-    df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
-    df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
-    df = pd.concat([df_actual, df_forecast])
+            rng_actual = pd.date_range(end=datetime.today(), periods=15)
+            actual = (np.sin(np.linspace(0, 1.5, 15)) + 1.5) * 50000 + np.linspace(80000, 60000, 15)
 
-    base = alt.Chart(df).encode(
-        x=alt.X('date:T', axis=alt.Axis(title=None, format='%d %b'))
-    )
-    line = base.mark_line().encode(
-        y='Sales:Q',
-        color=alt.Color(
-            'Type:N',
-            scale=alt.Scale(domain=['Actual','Forecast'], range=['#1E61D4','#34C759']),
-            legend=alt.Legend(title=None, orient='top')
-        ),
-        strokeDash=alt.condition(alt.datum.Type=='Forecast', alt.value([4,2]), alt.value([]))
-    )
+            forecast_days = int(main_label.split()[0])
 
-    points_actual = df_actual.copy()
-    points_actual_chart = alt.Chart(points_actual).mark_point(filled=True, size=10, color='black').encode(
-        x='date:T',
-        y='Sales:Q'
-    )
-    if forecast_days > 30:
-        points_forecast = df_forecast.iloc[::3, :]  
+            prompt = f"""
+            Given the past 15 days of sales data:
+            {actual.tolist()}
+
+            Predict the next {forecast_days} days of sales numbers as a Python list of numeric values.
+            Return only the list, nothing else.
+            """
+
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile", 
+                messages=[{"role": "user", "content": prompt}],
+            )
+            forecast_text = response.choices[0].message.content
+
+            try:
+                forecast = ast.literal_eval(re.findall(r'\[.*\]', forecast_text)[0])
+            except Exception:
+                forecast = [actual[-1]] * forecast_days
+
+            # ---- Build DataFrames ----
+            rng_forecast = pd.date_range(start=datetime.today() + timedelta(days=1), periods=len(forecast))
+            df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
+            df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
+            df = pd.concat([df_actual, df_forecast])
+
+            # ---- Altair Chart ----
+            base = alt.Chart(df).encode(x=alt.X('date:T', axis=alt.Axis(title=None, format='%d %b')))
+            line = base.mark_line().encode(
+                y='Sales:Q',
+                color=alt.Color(
+                    'Type:N',
+                    scale=alt.Scale(domain=['Actual', 'Forecast'], range=['#1E61D4', '#34C759']),
+                    legend=alt.Legend(title=None, orient='top')
+                ),
+                strokeDash=alt.condition(alt.datum.Type == 'Forecast', alt.value([4, 2]), alt.value([]))
+            )
+
+            points_actual_chart = alt.Chart(df_actual).mark_point(filled=True, size=10, color='black').encode(x='date:T', y='Sales:Q')
+            points_forecast_chart = alt.Chart(df_forecast).mark_point(filled=True, size=10, color='black').encode(x='date:T', y='Sales:Q')
+
+            chart = (line + points_actual_chart + points_forecast_chart).properties(height=320)
+            st.altair_chart(chart, use_container_width=True)
+                    
+            st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
+            st.write("""
+            • Review products with declining forecasts and consider promotions.\n
+            • Rebalance inventory for items with increasing forecast trends to avoid stockouts.\n
+            • Investigate external factors (seasonality, events) affecting dips in sales and prepare targeted campaigns.
+            """)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        except Exception as e:
+            st.error(f"❌ Error generating forecast: {e}")
+
     else:
-        points_forecast = df_forecast
-
-    points_forecast_chart = alt.Chart(points_forecast).mark_point(filled=True, size=10, color='black').encode(
-        x='date:T',
-        y='Sales:Q'
-    )
-    chart = (line + points_actual_chart + points_forecast_chart).properties(height=320)
-    st.altair_chart(chart, use_container_width=True)
-    
-    # st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
-    st.write("""
-    • Review products with declining forecasts and consider promotions.\n
-    • Rebalance inventory for items with increasing forecast trends to avoid stockouts.\n
-    • Investigate external factors (seasonality, events) affecting dips in sales and prepare targeted campaigns.
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
-    
+        st.info("👈 Select options and click '✨ Generate Analytics' to see the forecast.")

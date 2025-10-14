@@ -2,3 +2,7 @@ plotly
 streamlit
 pandas
 numpy
+openai
+python-dotenv
+altair
+groq
