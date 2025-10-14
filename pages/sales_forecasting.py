@@ -152,38 +152,38 @@ with left_col:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with right_col:
-    rng = pd.date_range(end=datetime.today(), periods=30)
-    actual = (np.sin(np.linspace(0, 3.5, 30)) + 1.5) * 50000 + np.linspace(80000, 60000, 30)
-    forecast = actual * (1 + np.linspace(-0.05, 0.08, 30))
-
-    df = pd.DataFrame({
-        'date': rng,
-        'Actual Sales': actual,
-        'Sales Forecasting': forecast
-    })
 
     st.markdown("<strong>Sales Trend</strong>", unsafe_allow_html=True)
     st.markdown("<div style='color:#6b7280;margin-bottom:8px;'>Actual Sales Data vs Forecast Sales</div>", unsafe_allow_html=True)
-
-        # --- Add Actual vs Predicted legend ---
-    st.markdown("""
-    <div style="display:flex; align-items:center; gap:20px; margin-top:8px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-            <div style="width:16px; height:16px; background-color:#1f77b4;"></div>
-            <span>Actual Sales</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-            <div style="width:16px; height:16px; border:2px dashed #ff7f0e;"></div>
-            <span>Forecast Sales</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     
-    base = alt.Chart(df).encode(x=alt.X('date:T', axis=alt.Axis(title=None,format='%d %b')))
-    line_actual = base.mark_line(point=True).encode(y=alt.Y('Actual Sales:Q', axis=alt.Axis(title=None)))
-    line_fore = base.mark_line(strokeDash=[4,2], color='#ff7f0e').encode(y='Sales Forecasting:Q')
+    rng_actual = pd.date_range(end=datetime.today(), periods=15)
+    actual = (np.sin(np.linspace(0, 1.5, 15)) + 1.5) * 50000 + np.linspace(80000, 60000, 15)
 
-    chart = (line_actual + line_fore).properties(height=320)
+    rng_forecast = pd.date_range(start=datetime.today(), periods=31)  
+    forecast = actual[-1] * (1 + np.linspace(0, 0.08, 31)) 
+    df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
+    df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
+    df = pd.concat([df_actual, df_forecast])
+
+    base = alt.Chart(df).encode(
+        x=alt.X('date:T', axis=alt.Axis(title=None, format='%d %b'))
+    )
+
+    line = base.mark_line().encode(
+        y='Sales:Q',
+        color=alt.Color(
+            'Type:N',
+            scale=alt.Scale(domain=['Actual','Forecast'], range=['#1E61D4','#34C759']),
+            legend=alt.Legend(title=None, orient='top')
+        ),
+        strokeDash=alt.condition(alt.datum.Type=='Forecast', alt.value([4,2]), alt.value([]))
+    )
+
+    points = base.mark_point(filled=True, size=10, color='black').encode(
+        y='Sales:Q'
+    )
+
+    chart = (line + points).properties(height=320)
     st.altair_chart(chart, use_container_width=True)
     
     # st.markdown("</div>", unsafe_allow_html=True)
@@ -195,6 +195,8 @@ with right_col:
     • Investigate external factors (seasonality, events) affecting dips in sales and prepare targeted campaigns.
     """)
     st.markdown("</div>", unsafe_allow_html=True)
+    
+      
 
 
 
