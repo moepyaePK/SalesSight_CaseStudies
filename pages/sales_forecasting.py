@@ -159,8 +159,10 @@ with right_col:
     rng_actual = pd.date_range(end=datetime.today(), periods=15)
     actual = (np.sin(np.linspace(0, 1.5, 15)) + 1.5) * 50000 + np.linspace(80000, 60000, 15)
 
-    rng_forecast = pd.date_range(start=datetime.today(), periods=31)  
-    forecast = actual[-1] * (1 + np.linspace(0, 0.08, 31)) 
+    forecast_days = int(main_label.split()[0])
+    rng_forecast = pd.date_range(start=datetime.today() + timedelta(days=1), periods=forecast_days)
+    forecast = actual[-1] * (1 + np.linspace(0, 0.08, forecast_days))
+
     df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
     df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
     df = pd.concat([df_actual, df_forecast])
@@ -168,7 +170,6 @@ with right_col:
     base = alt.Chart(df).encode(
         x=alt.X('date:T', axis=alt.Axis(title=None, format='%d %b'))
     )
-
     line = base.mark_line().encode(
         y='Sales:Q',
         color=alt.Color(
@@ -179,11 +180,21 @@ with right_col:
         strokeDash=alt.condition(alt.datum.Type=='Forecast', alt.value([4,2]), alt.value([]))
     )
 
-    points = base.mark_point(filled=True, size=10, color='black').encode(
+    points_actual = df_actual.copy()
+    points_actual_chart = alt.Chart(points_actual).mark_point(filled=True, size=10, color='black').encode(
+        x='date:T',
         y='Sales:Q'
     )
+    if forecast_days > 30:
+        points_forecast = df_forecast.iloc[::3, :]  
+    else:
+        points_forecast = df_forecast
 
-    chart = (line + points).properties(height=320)
+    points_forecast_chart = alt.Chart(points_forecast).mark_point(filled=True, size=10, color='black').encode(
+        x='date:T',
+        y='Sales:Q'
+    )
+    chart = (line + points_actual_chart + points_forecast_chart).properties(height=320)
     st.altair_chart(chart, use_container_width=True)
     
     # st.markdown("</div>", unsafe_allow_html=True)
@@ -196,44 +207,3 @@ with right_col:
     """)
     st.markdown("</div>", unsafe_allow_html=True)
     
-      
-
-
-
-
-
-
-# import streamlit as st
-# import pandas as pd
-# import numpy as np
-# from utils import add_sidebar_logo
-
-
-
-# st.set_page_config(page_title="SalesSight - Sales Forecasting", layout="wide")
-# add_sidebar_logo()
-
-# st.title("📈 Sales Forecasting")
-# st.write("Configure Forecast Parameters and Generate Predictive Sales Analytics")
-
-# col1, col2 = st.columns([1, 2])
-
-# with col1:
-#     st.subheader("Forecast Period")
-#     period = st.radio("", ["30 Days", "60 Days", "90 Days"], index=0)
-
-#     st.subheader("Forecast Target")
-#     target = st.selectbox("", ["All Products", "Product A", "Product B"])
-
-#     st.button("🔮 Generate Analytics")
-
-# with col2:
-#     st.subheader("Sales Trend")
-#     dates = pd.date_range("2023-09-12", periods=12)
-#     actual = np.random.randint(60_000, 100_000, len(dates))
-#     forecast = actual + np.random.randint(-5000, 15000, len(dates))
-#     st.line_chart({"Actual Sales": actual, "Sales Forecasting": forecast}, x=dates)
-
-# st.markdown("---")
-# st.subheader("✨ Recommended Actions")
-# st.info("This is where AI-generated recommended actions will appear.")
