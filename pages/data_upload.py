@@ -8,6 +8,7 @@ st.set_page_config(page_title="SalesSight - Data Upload", layout="wide")
 
 add_sidebar_logo()
 
+
 def data_extraction(file_path):
     try:
         df = pd.read_csv(file_path)
@@ -16,30 +17,30 @@ def data_extraction(file_path):
     except Exception as e:
         return {"error": f"Error reading file: {e}"}
 
-    # Validate columns
-    required_cols = ['Sales', 'Profit', 'Order ID']
+    # Validate required columns
+    required_cols = ['Sales', 'Date']
     for col in required_cols:
         if col not in df.columns:
             return {"error": f"Missing required column: {col}"}
 
+    # Clean and sort data
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df = df.dropna(subset=['Date', 'Sales']).sort_values('Date')
+
     # Compute KPIs
     total_sales = df['Sales'].sum()
-    total_profit = df['Profit'].sum()
-    num_orders = df['Order ID'].nunique()
-    gross_margin = round((total_profit / total_sales) * 100, 2) if total_sales != 0 else 0
+    avg_sales = df['Sales'].mean()
+    latest_sales = df['Sales'].iloc[-1] if len(df) > 0 else 0
+    growth = ((df['Sales'].iloc[-1] - df['Sales'].iloc[-2]) / df['Sales'].iloc[-2] * 100) if len(df) > 1 else 0
 
-    # Sales trend over time (if date exists)
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        sales_trend = (
-            df.groupby(df['Date'].dt.to_period('M'))['Sales']
-            .sum()
-            .reset_index()
-            .sort_values('Date')
-        )
-        sales_trend['Date'] = sales_trend['Date'].astype(str)
-    else:
-        sales_trend = None
+    # Sales trend over time (monthly aggregation)
+    sales_trend = (
+        df.groupby(df['Date'].dt.to_period('M'))['Sales']
+        .sum()
+        .reset_index()
+        .sort_values('Date')
+    )
+    sales_trend['Date'] = sales_trend['Date'].dt.to_timestamp()
 
     # Top products by sales (if Product column exists)
     if 'Product' in df.columns:
@@ -53,17 +54,17 @@ def data_extraction(file_path):
     else:
         top_products = None
 
-    # Store metrics
     metrics = {
         "total_sales": round(total_sales, 2),
-        "total_profit": round(total_profit, 2),
-        "num_orders": int(num_orders),
-        "gross_margin": gross_margin,
+        "avg_sales": round(avg_sales, 2),
+        "latest_sales": round(latest_sales, 2),
+        "growth": round(growth, 2),
         "sales_trend": sales_trend,
         "top_products": top_products
     }
 
     return metrics
+
     
 
 st.title("📤 Upload Sale Data")
