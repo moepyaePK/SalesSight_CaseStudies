@@ -69,11 +69,40 @@ def data_extraction(file_path):
 
 st.title("📤 Upload Sale Data")
 
-uploaded_files = st.file_uploader(
-    "Drop files here or browse",
-    type=["csv", "xlsx"],
-    accept_multiple_files=True
-)
+col1, col2 = st.columns([1.5, 1])
+
+with col1:
+    uploaded_files = st.file_uploader(
+        "",
+        type=["csv", "xlsx"],
+        accept_multiple_files=True,
+        label_visibility="visible"
+    )
+
+
+with col2:
+    st.markdown(
+        """
+        <div style="
+            border: 1px solid #B3D4FC;
+            background-color: #F0F7FF;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            font-family: 'Segoe UI', sans-serif;
+        ">
+            <strong style="color:#2C6BED; font-size:16px;">📘 File Requirements</strong>
+            <ul style="margin-top: 10px; margin-bottom: 0; color:#333; font-size:14px;">
+                <li><strong>File formats:</strong> CSV, XLSX</li>
+                <li><strong>Maximum file size:</strong> 50 MB</li>
+                <li><strong>Required columns:</strong> Date, Product, Sales, Customer ID</li>
+                <li><strong>Date format:</strong> YYYY-MM-DD or MM/DD/YYYY</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 if "file_status" not in st.session_state:
     st.session_state.file_status = {}
