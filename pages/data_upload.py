@@ -94,8 +94,8 @@ with col2:
             <strong style="color:#2C6BED; font-size:16px;">📘 File Requirements</strong>
             <ul style="margin-top: 10px; margin-bottom: 0; color:#333; font-size:14px;">
                 <li><strong>File formats:</strong> CSV, XLSX</li>
-                <li><strong>Maximum file size:</strong> 50 MB</li>
-                <li><strong>Required columns:</strong> Date, Product, Sales, Customer ID</li>
+                <li><strong>Maximum file size:</strong> 200 MB</li>
+                <li><strong>Required columns:</strong> Date, Product, Sales</li>
                 <li><strong>Date format:</strong> YYYY-MM-DD or MM/DD/YYYY</li>
             </ul>
         </div>

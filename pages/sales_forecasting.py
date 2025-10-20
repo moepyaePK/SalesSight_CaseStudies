@@ -9,9 +9,11 @@ from groq import Groq
 import altair as alt
 import numpy as np
 from datetime import datetime, timedelta
+from utils import add_sidebar_logo
 
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
+add_sidebar_logo()
 
 # ---- Load CSV ----
 if "save_path" not in st.session_state:
