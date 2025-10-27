@@ -1,4 +1,3 @@
-
 =======
 # Test Plan
 
@@ -78,6 +77,16 @@
 - Automated: (Yes/No)
 - Owner:
 
+### Sample Test Cases (Mock Data)
+
+| ID      | Title                | Related Requirement(s) | Preconditions                     | Expected Result                                  |
+|---------|----------------------|------------------------|------------------------------------|--------------------------------------------------|
+| TC-001  | User Login           | REQ-01                 | Test user exists                   | User successfully logs in and lands on dashboard |
+| TC-002  | Create Lead          | REQ-02                 | User is logged in                  | New lead is created and visible in lead list     |
+| TC-003  | Search Leads         | REQ-03                 | At least one lead exists           | Search returns matching leads                    |
+| TC-004  | Export Report        | REQ-05                 | Reports module accessible          | CSV export downloads with correct data           |
+| TC-005  | Permission Enforcement| REQ-04                | Two roles exist (admin/user)       | Restricted actions blocked for unauthorized role |
+
 ## 15. Metrics & Reporting
 - Test execution progress, pass/fail rate, defect density, test coverage.
 - Reporting cadence and stakeholders.
@@ -88,4 +97,6 @@
 - Release Manager:
 
 (Use this template as a starting point; customize sections, fields, and level of detail to match project needs.)
->>>>>>> 61f361c9138841cd66c20301147fa500df8be59e
+
+
+
