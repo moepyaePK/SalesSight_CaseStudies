@@ -6,7 +6,7 @@ Project: SalesSight
 
 Author(s): Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko , Moe Pyae Pyae Kyaw, Chan Myae Zaw, Yoon Moh Moh Aung, Min Swam Pyae, Pyae Phyo Paing, Min Khant Than Swe
 
-Date Created: October 21, 2025
+Date Created: October 17, 2025
 
 2. Feature: Sale File Upload
 
