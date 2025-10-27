@@ -69,6 +69,14 @@ import pandas as pd
 import altair as alt
 from pages.data_upload import data_extraction
 from utils import add_sidebar_logo
+from auth import is_logged_in
+
+# Redirect if not logged in
+if not is_logged_in():
+    st.warning("You must be logged in to access the Dashboard.")
+    st.switch_page("Home.py")
+    st.stop()
+
 
 # ---- Page Config ----
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
@@ -122,11 +130,9 @@ else:
                         alt.Tooltip('Sales:Q', title='Sales', format='$,.0f')
                     ]
                 ).properties(height=350)
-
                 st.altair_chart(chart, use_container_width=True)
             else:
                 st.info("No 'Date' column found for trend visualization.")
-
         with right_col:
             st.subheader("🏆 Top Products")
             if metrics.get("top_products") is not None and not metrics["top_products"].empty:

@@ -4,6 +4,15 @@ import time
 import json
 import pandas as pd
 from utils import add_sidebar_logo
+from auth import is_logged_in
+
+
+if not is_logged_in():
+    st.warning("⚠️ Please login to continue.")
+    st.switch_page("Home.py")
+    st.stop()
+
+
 st.set_page_config(page_title="SalesSight - Data Upload", layout="wide")
 
 add_sidebar_logo()

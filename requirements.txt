@@ -6,3 +6,4 @@ openai
 python-dotenv
 altair
 groq
+sqlalchemy
