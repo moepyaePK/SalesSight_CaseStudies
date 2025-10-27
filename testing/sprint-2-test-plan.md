@@ -3,7 +3,7 @@
 
 ## Document Control
 - Version: 0.1
-- Author: 
+- Author: Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko
 - Date: 
 - Status: Draft
 
