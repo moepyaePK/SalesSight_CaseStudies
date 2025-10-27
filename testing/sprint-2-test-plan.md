@@ -3,8 +3,8 @@
 
 ## Document Control
 - Version: 0.1
-- Author: Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko
-- Date: 
+- Author: Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko , Moe Pyae Pyae Kyaw, Chan Myae Zaw, Yoon Moh Moh Aung, Min Swam Pyae, Pyae Phyo Paing, Min Khant Than Swe
+- Date: Oct 21 2025
 - Status: Draft
 
 ## 1. Overview
