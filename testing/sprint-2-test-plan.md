@@ -15,7 +15,8 @@ User Story: "As an SME owner, I want to create an account for my business, so th
 
 | ID      | Title                | Preconditions | Test Steps                     | Expected Result                                  |
 |---------|----------------------|------------------------|------------------------------------|--------------------------------------------------|
-| RL-001  | Account Registration           | -                 | 1. Navigate to the website.<br/>2. Click "Regoster".<br/>3. Enter username, email, password and confirm password in the correct format.<br/>4. Click "Register".                  | User successfully register for their account and lands on log in page. |
+| RL-001  | Account Registration           | -                 | 1. Navigate to the website.<br/>2. Click "Register".<br/>3. Enter username, email, password and confirm password in the correct format.<br/>4. Click "Register".                  | -User successfully register for their account and lands on log in page.<br/>-Account information is saved to the database.|
+| RL-002  | User Log In           | User already created an account on the website.                 | 1. Navigate to the website.<br/>2. Click "Login".<br/>3. Enter email and password.<br/>4. Click "Login".                  | User successfully land on the upload tab of of home page. |
 | TC-002  | Create Lead          | REQ-02                 | User is logged in                  | New lead is created and visible in lead list     |
 | TC-003  | Search Leads         | REQ-03                 | At least one lead exists           | Search returns matching leads                    |
 | TC-004  | Export Report        | REQ-05                 | Reports module accessible          | CSV export downloads with correct data           |
