@@ -17,21 +17,5 @@ User Story: "As an SME owner, I want to create an account for my business, so th
 |---------|----------------------|------------------------|------------------------------------|--------------------------------------------------|
 | RL-001  | Account Registration           | -                 | 1. Navigate to the website.<br/>2. Click "Register".<br/>3. Enter username, email, password and confirm password in the correct format.<br/>4. Click "Register".                  | -User successfully register for their account and lands on log in page.<br/>-Account information is saved to the database.|
 | RL-002  | User Log In           | User already created an account on the website.                 | 1. Navigate to the website.<br/>2. Click "Login".<br/>3. Enter email and password.<br/>4. Click "Login".                  | User successfully land on the upload tab of of home page. |
-| TC-002  | Create Lead          | REQ-02                 | User is logged in                  | New lead is created and visible in lead list     |
-| TC-003  | Search Leads         | REQ-03                 | At least one lead exists           | Search returns matching leads                    |
-| TC-004  | Export Report        | REQ-05                 | Reports module accessible          | CSV export downloads with correct data           |
-| TC-005  | Permission Enforcement| REQ-04                | Two roles exist (admin/user)       | Restricted actions blocked for unauthorized role |
+| RL-003  | Dashboard & Sales Forecasting – Cache Cleared After Login (Sad Path)          | No CSV data file has been uploaded to the system after Login.                 | 1. Navigate to the website.<br/>2. Login and navigate to Dashboard or Sale Forecasting.                  | -Cached data is lost after login refresh.<br/>-Dashboard and Forecasting pages show an error message.<br/>-Previously viewed results are not retained.<br/>-User must upload the CSV file again to continue.     |
 
-
-3. Feature: Sale File Upload
-
-User Story: "As a Head Judge, I want to see all Q Grader scores for a single sample and set a final, official score, so that I can resolve disagreements and finalize the evaluation."
-
-
-| ID      | Title                | Preconditions | Test Steps                     | Expected Result                                  |
-|---------|----------------------|------------------------|------------------------------------|--------------------------------------------------|
-| TC-001  | User Login           | REQ-01                 | Test user exists                   | User successfully logs in and lands on dashboard |
-| TC-002  | Create Lead          | REQ-02                 | User is logged in                  | New lead is created and visible in lead list     |
-| TC-003  | Search Leads         | REQ-03                 | At least one lead exists           | Search returns matching leads                    |
-| TC-004  | Export Report        | REQ-05                 | Reports module accessible          | CSV export downloads with correct data           |
-| TC-005  | Permission Enforcement| REQ-04                | Two roles exist (admin/user)       | Restricted actions blocked for unauthorized role |
