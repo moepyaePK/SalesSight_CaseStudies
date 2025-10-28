@@ -1,16 +1,16 @@
-#Test Plan of Sprint 2
+# Test Plan of Sprint 2
 
-##1. Introduction & Scope
+## 1. Introduction & Scope
 
 This section outlines the specific test cases for the key user stories being developed in Sprint 2. Our primary goal is to ensure the reliability, correctness, and usability of the new features. These detailed test cases will guide both manual testing efforts and the development of automated tests, minimizing defects and enhancing user satisfaction.
 
-##Project: SalesSight
+## Project: SalesSight
 
 Author(s): Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko , Moe Pyae Pyae Kyaw, Chan Myae Zaw, Yoon Moh Moh Aung, Min Swam Pyae, Pyae Phyo Paing, Min Khant Than Swe
 
 Date Created: October 17, 2025
 
-##2. Feature: User Registeration and Log-in
+## 2. Feature: User Registeration and Log-in
 
 User Story: "As an SME owner, I want to create an account for my business, so that I can save my data and don't need to repeat the whole process when I enter the website."
 
