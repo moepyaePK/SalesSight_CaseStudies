@@ -6,7 +6,7 @@ This section outlines the specific test cases for the key user stories being dev
 
 Project: SalesSight
 
-Author(s): Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko , Moe Pyae Pyae Kyaw, Chan Myae Zaw, Yoon Moh Moh Aung, Min Swan Pyae, Pyae Phyo Paing, Min Khant Than Swe
+Author(s): Khun Shine Si Thu, Ei Thiri Aung, Soe Moe Ko , Moe Pyae Pyae Kyaw, Chann Myae Zaw, Yoon Moh Moh Aung, Min Swan Pyae, Pyae Phyo Paing, Min Khant Than Swe
 
 Date Created: October 17, 2025
 
