@@ -11,8 +11,8 @@ def require_upload():
         st.warning("⚠️ Please upload a sales CSV file first on the Upload page to view analytics.")
         st.stop()
 
-def custom_sidebar(logo_path="logo.png", title="SalesSight"):
-    # Hide Streamlit default sidebar navigation
+def custom_sidebar(logo_path="logo.png", title="SalesSight", sidebar_bg="#000000", label_color="#ffffff"):
+    # Hide Streamlit default sidebar navigation (we'll render our own header and override styles)
     st.markdown("""
         <style>
         [data-testid="stSidebarNav"] {display: none;}
@@ -33,7 +33,7 @@ def custom_sidebar(logo_path="logo.png", title="SalesSight"):
             font-family: 'Inter', sans-serif;
             font-weight: 600;
             font-size: 18px;
-            color: #1E90FF;
+                        color: #1E90FF;
             margin-bottom: 25px;
         }}
         .sidebar-title img {{
@@ -41,6 +41,47 @@ def custom_sidebar(logo_path="logo.png", title="SalesSight"):
             height: 30px;
         }}
         </style>
+    """, unsafe_allow_html=True)
+
+    # Apply styles using inline properties (with !important) and a MutationObserver so they persist
+    st.markdown(f"""
+    <script>
+    (function() {{
+        function applySidebarStyles(){{
+            const sidebar = document.querySelector('[data-testid="stSidebar"]') || document.querySelector('section[data-testid="stSidebar"]');
+            const nav = document.querySelector('[data-testid="stSidebarNav"]');
+            if(sidebar){{
+                sidebar.style.setProperty('background', '{sidebar_bg}', 'important');
+                sidebar.style.setProperty('color', '{label_color}', 'important');
+            }}
+            if(nav){{
+                nav.style.setProperty('background', '{sidebar_bg}', 'important');
+                // links
+                nav.querySelectorAll('a').forEach(a => {{
+                    a.style.setProperty('color', '{label_color}', 'important');
+                    a.style.setProperty('font-weight', '500', 'important');
+                }});
+                // active link
+                nav.querySelectorAll('a[data-testid="stSidebarNavLinkActive"]').forEach(a => {{
+                    a.style.setProperty('background', 'rgba(255,255,255,0.08)', 'important');
+                    a.style.setProperty('color', '{label_color}', 'important');
+                    a.style.setProperty('font-weight', '700', 'important');
+                }});
+                // svg icons
+                nav.querySelectorAll('svg').forEach(s => {{
+                    s.style.setProperty('fill', '{label_color}', 'important');
+                }});
+            }}
+        }}
+
+        applySidebarStyles();
+
+        const observer = new MutationObserver(() => {{ applySidebarStyles(); }});
+        observer.observe(document.body, {{ childList: true, subtree: true }});
+        // stop observing after 5s to avoid overhead
+        setTimeout(() => observer.disconnect(), 5000);
+    }})();
+    </script>
     """, unsafe_allow_html=True)
 
     # Sidebar structure
@@ -54,3 +95,4 @@ def custom_sidebar(logo_path="logo.png", title="SalesSight"):
             """,
             unsafe_allow_html=True
         )
+        

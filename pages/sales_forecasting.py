@@ -9,112 +9,29 @@ from groq import Groq
 import altair as alt
 import numpy as np
 from datetime import datetime, timedelta
-from auth import is_logged_in
-from utils import custom_sidebar,require_upload
-import base64
+from auth import is_logged_in, logout
+from utils import require_upload, custom_sidebar
 import os
-from auth import logout
+from dotenv import load_dotenv
+from groq import Groq
+import altair as alt
+import numpy as np
+from datetime import datetime, timedelta
+from auth import is_logged_in, logout
+from utils import require_upload, custom_sidebar
+import os
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
 custom_sidebar()
 
-
-st.markdown("""
-<style>
-[data-testid="stSidebarNav"] {display: none !important;}
-</style>
-""", unsafe_allow_html=True)
-
-
-# --- Sidebar Style ---
-logo_path = "logo.png"
-title = "SalesSight"
-
-with open(logo_path, "rb") as f:
-    logo_base64 = base64.b64encode(f.read()).decode()
-
-st.markdown(
-    f"""
-    <style>
-        [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
-            padding-top: 0 !important;
-        }}
-
-        [data-testid="stSidebarNav"]::before {{
-            content: "";
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            height: 60px;
-            width: 100%;
-            background-color: #ffffff;
-            background-image: url("data:image/png;base64,{logo_base64}");
-            background-repeat: no-repeat;
-            background-size: 26px 26px;
-            background-position: 18px center;
-            border-bottom: 1px solid #f2f2f2;
-            position: relative;
-            z-index: 1;
-            pointer-events: none;
-        }}
-
-        [data-testid="stSidebarNav"]::after {{
-            content: "{title}";
-            position: absolute;
-            top: 18px;
-            left: 52px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 18px;
-            color: #1E90FF;
-            z-index: 1;
-            pointer-events: none;
-        }}
-
-        [data-testid="stSidebarNav"] {{
-            margin-top: -60px !important;
-            position: relative;
-            z-index: 0;
-        }}
-
-        [data-testid="stSidebarNav"] ul {{
-            padding-left: 10px;
-        }}
-
-        [data-testid="stSidebarNav"] li a {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-            color: #4B5563 !important;
-            transition: all 0.2s ease-in-out;
-        }}
-
-        [data-testid="stSidebarNav"] li a[data-testid="stSidebarNavLinkActive"] {{
-            background-color: #bbddfc !important;
-            color: #1E90FF !important;
-            font-weight: 600 !important;
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- Sidebar Content ---
 with st.sidebar:
     st.page_link("pages/dashboard.py", label="📊 Dashboard")
     st.page_link("pages/data_upload.py", label="📂 Upload")
     st.page_link("pages/sales_forecasting.py", label="📈 Sales Forecasting")
     st.page_link("pages/setting.py", label="⚙️ Settings")
     if st.button("Logout"):
-        logout() 
+        logout()
 
 
 if not is_logged_in():
@@ -125,12 +42,50 @@ if not is_logged_in():
 
 
 # ---- Load CSV ----
-if "save_path" not in st.session_state:
-    st.warning("Please upload a CSV file first.")
+# Ensure a file path string exists and is readable. Show friendly message otherwise.
+if "save_path" not in st.session_state or not isinstance(st.session_state.get("save_path"), str):
+    st.markdown(
+        """
+        <div style='text-align:center; padding:60px;'>
+            <h2 style='color:#6c63ff;'>No file uploaded yet 📂</h2>
+            <p style='font-size:16px; color:#666;'>Please upload your sales CSV file on the <b>Data Upload</b> page to use forecasting.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.stop()
 
-file_path = st.session_state.save_path
-df = pd.read_csv(file_path)
+file_path = st.session_state.get("save_path")
+try:
+    df = pd.read_csv(file_path)
+except Exception as e:
+    st.error("❌ Unable to read the uploaded file. Please re-upload a CSV file on the Data Upload page.")
+    st.exception(e)
+    st.stop()
+
+# Apply strict black theme CSS for forecasting page after a successful file load
+st.markdown(
+    """
+    <style>
+    /* Forecasting page: pure black background and crisp white text after file load */
+    .stApp .main .block-container { background-color: #000000 !important; color: #ffffff !important; }
+    .stApp, .reportview-container, .main, header { background-color: #000000 !important; }
+
+    /* Cards and containers use black panels */
+    .card, .recommended, .radio-card { background: #000000 !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.03) !important; box-shadow: none !important; }
+
+    /* Headings and text */
+    .section-title, h1, h2, h3 { color: #ffffff !important; }
+
+    /* Buttons (subtle dark style with enough contrast) */
+    .stButton>button { background-color: #111827 !important; color: #ffffff !important; border-radius: 8px !important; }
+
+    /* Chart text/readability */
+    .vega-embed text, .vega-embed .mark-text { fill: #ffffff !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ---- Summaries ----
 product_summary = df.groupby('Product')['Sales'].sum().reset_index()
@@ -148,83 +103,10 @@ client = Groq(api_key=GROQ_API_KEY)
 st.title("Sales Forecasting Dashboard")
 
 
-st.markdown(
-    """
-    <style>
-    /* general background and container spacing */
-    .reportview-container, .main, header, .stApp {
-        background-color: #f6f7fb;
-    }
-    /* sidebar style */
-    .sidebar .sidebar-content {
-        background: #ffffff;
-        padding-top: 14px;
-    }
-    /* Logo in sidebar */
-    .logo {
-        font-weight: 700;
-        font-size: 18px;
-        padding: 10px 14px;
-        color: #1155cc;
-    }
-    /* navigation items */
-    .nav-item {
-        padding: 12px 14px;
-        display: block;
-        color: #333333;
-        border-radius: 6px;
-        margin: 6px 8px;
-    }
-    .nav-item.selected {
-        background-color: #f1f6ff;
-        color: #1155cc;
-        font-weight: 600;
-    }
-    /* left control card look */
-    .card {
-        background: #ffffff;
-        padding: 18px;
-        border-radius: 8px;
-        box-shadow: 0 1px 0 rgba(16,24,40,0.04);
-        border: 1px solid rgba(16,24,40,0.04);
-    }
-    .radio-card {
-        border:1px solid rgba(16,24,40,0.06);
-        padding:12px;
-        border-radius:8px;
-        margin-bottom:8px;
-    }
-    .generate-btn {
-        background-color:#1148d8;
-        color:white;
-        padding:12px 18px;
-        border-radius:8px;
-        text-align:center;
-        display:inline-block;
-        font-weight:700;
-    }
-    .section-title {
-        font-size:20px;
-        font-weight:700;
-        margin-bottom:6px;
-    }
-    .subtitle {
-        color: #6b7280;
-        margin-bottom:12px;
-    }
-    .recommended {
-        background: #ffffff;
-        padding: 18px;
-        border-radius:8px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# (Removed always-on dark theme block — theming is applied only after a successful file load above.)
 
 
-st.markdown("<div class='section-title'>Sales Forecasting</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Configure Forecast Parameters and Generate Predictive Sales Analytics</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-title' style='margin-bottom:24px;'>Sales Forecasting : Configure Forecast Parameters and Generate Predictive Sales Analytics</div>", unsafe_allow_html=True)
 
 left_col, right_col = st.columns([1,2])
 
@@ -234,45 +116,21 @@ with left_col:
 
     st.markdown("""
     <style>
-    /* Make each radio label look like a card */
+    /* Radio labels styled as pure black / white cards (applies after load) */
     div[role="radiogroup"] > label {
-        background-color: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
+        background-color: #000000; border: 1px solid #222222; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display:flex; flex-direction:column; align-items:flex-start; cursor:pointer; transition: all 0.12s ease-in-out; color:#ffffff;
     }
-    div[role="radiogroup"] > label:hover {
-        background-color: #f1f6ff;
-        border-color: #2563eb;
-    }
-    div[role="radiogroup"] input:checked + div {
-        color: #03045e !important;
-        font-weight: 700 !important;
-    }
-    /* Style the main and sub text lines separately */
-    .radio-main {
-        font-size: 15px;
-        font-weight: 700;
-        line-height: 1.1;
-    }
-    .radio-sub {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 2px;
-    }
+    div[role="radiogroup"] > label:hover { background-color: #111111; border-color: #333333; }
+    div[role="radiogroup"] input:checked + div { color: #ffffff !important; font-weight:700 !important; }
+    .radio-main { font-size:15px; font-weight:700; color:#ffffff; }
+    .radio-sub { font-size:12px; color:#bfbfbf; margin-top:2px; }
     </style>
     """, unsafe_allow_html=True)
     
 # 1148d8
 
     labels = ["30 Days", "60 Days", "90 Days"]
-    sublabels = ["Short-term Forecast", "Medium-term Forecast", "Long-term Forecast"]
+    sublabels = [" SHT-term Forecast", "MED-term Forecast", "LNG-term Forecast"]
 
     display_labels = [f"{main} -  {sub}" for main, sub in zip(labels, sublabels)]
 
@@ -290,7 +148,9 @@ with left_col:
     else:
         products = ['All Products']
 
-    product = st.selectbox("", products)
+    # Place selectbox in a slightly wider column to improve usability
+    prod_col, _ = st.columns([3, 4])
+    product = prod_col.selectbox("", products)
 
     generate_btn = st.button("🔮 Generate Forecast")
 
@@ -417,10 +277,10 @@ with right_col:
             )
         )
 
-        points_actual_chart = alt.Chart(df_actual).mark_point(filled=True, size=10, color='black').encode(
+        points_actual_chart = alt.Chart(df_actual).mark_point(filled=True, size=10, color='#ffffff').encode(
             x='date:T', y='Sales:Q'
         )
-        points_forecast_chart = alt.Chart(df_forecast.iloc[1::3, :] if forecast_days > 30 else df_forecast.iloc[1:, :]).mark_point(filled=True, size=10, color='black').encode(
+        points_forecast_chart = alt.Chart(df_forecast.iloc[1::3, :] if forecast_days > 30 else df_forecast.iloc[1:, :]).mark_point(filled=True, size=10, color='#ffffff').encode(
             x='date:T', y='Sales:Q'
         )
 
@@ -458,7 +318,14 @@ with right_col:
 
 
     else:
-        st.info("👈 Select options and click '🔮 Generate Forecast' to see the forecast.")
+        st.markdown(
+            """
+            <div class='info-msg' style='background:#000000;color:#ffffff;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);'>
+            👈 Select options and click '🔮 Generate Forecast' to see the forecast.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 
