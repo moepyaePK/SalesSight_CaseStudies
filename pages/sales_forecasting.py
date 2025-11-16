@@ -1,3 +1,190 @@
+# db.py
+import sqlite3
+import os
+
+DB_FILE = 'salesight.db'
+
+def get_db_connection():
+    """
+    Establishes a connection to the SQLite database.
+    The row_factory is set to sqlite3.Row to allow column access by name.
+    """
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def create_users_table():
+    """
+    Creates the 'users' table in the database if it doesn't already exist.
+    This table stores user credentials for authentication.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_feedback_table():
+    """
+    Creates the 'feedback' table in the database if it doesn't already exist.
+    This table stores user feedback for analysis sessions.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            session_id TEXT NOT NULL,
+            rating INTEGER NOT NULL,
+            comments TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def check_user(username, password):
+    """
+    Checks if a user with the given username and password exists in the database.
+
+    Args:
+        username (str): The username to check.
+        password (str): The password to check.
+
+    Returns:
+        bool: True if the user exists and credentials match, False otherwise.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    user = cursor.fetchone()
+    conn.close()
+    return user is not None
+
+def add_user(username, password):
+    """
+    Adds a new user to the database.
+
+    Args:
+        username (str): The username for the new user.
+        password (str): The password for the new user.
+
+    Returns:
+        bool: True if the user was added successfully, False if the username already exists.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False # Username already exists
+    finally:
+        conn.close()
+
+def get_user_id_by_username(username):
+    """
+    Retrieves the user ID for a given username.
+
+    Args:
+        username (str): The username to look up.
+
+    Returns:
+        int or None: The user's ID if found, otherwise None.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+    return user['id'] if user else None
+
+def insert_feedback(user_id, session_id, rating, comments):
+    """
+    Inserts user feedback into the feedback table.
+
+    Args:
+        user_id (int): The ID of the user providing feedback.
+        session_id (str): A unique identifier for the analysis session.
+        rating (int): The rating given by the user (e.g., 1-5).
+        comments (str): The feedback comments from the user.
+
+    Returns:
+        bool: True if feedback was inserted successfully, False otherwise.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO feedback (user_id, session_id, rating, comments) VALUES (?, ?, ?, ?)",
+            (user_id, session_id, rating, comments)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error inserting feedback: {e}") # Log the error for debugging
+        return False
+    finally:
+        conn.close()
+
+# Initialize tables when db.py is imported
+create_users_table()
+create_feedback_table()
+
+# feedback_module.py
+import streamlit as st
+import db # Assuming db.py is in the same directory or accessible via PYTHONPATH
+import uuid
+
+def display_feedback_form(user_id, analysis_session_id):
+    """
+    Displays a Streamlit form for users to submit feedback on the sales forecasting model.
+
+    Args:
+        user_id (int): The ID of the currently logged-in user.
+        analysis_session_id (str): A unique identifier for the current analysis session.
+    """
+    st.markdown("---")
+    st.subheader("We'd love your feedback!")
+    st.write("Help us improve SalesSight by sharing your experience with this forecasting model.")
+
+    with st.form("feedback_form", clear_on_submit=True):
+        rating = st.slider(
+            "How would you rate the accuracy and usefulness of this forecast?",
+            1, 5, 3,
+            help="1 = Poor, 5 = Excellent"
+        )
+        comments = st.text_area(
+            "Any comments or suggestions for improvement?",
+            placeholder="e.g., 'The forecast was very accurate for short-term, but less so for long-term.'",
+            height=100
+        )
+
+        submitted = st.form_submit_button("Submit Feedback")
+
+        if submitted:
+            if user_id is None:
+                st.error("Cannot submit feedback: User not logged in or user ID not found.")
+                return
+
+            try:
+                if db.insert_feedback(user_id, analysis_session_id, rating, comments):
+                    st.success("Thank you for your feedback! We appreciate it.")
+                else:
+                    st.error("Failed to submit feedback. Please try again.")
+            except Exception as e:
+                st.error(f"An unexpected error occurred while submitting feedback: {e}")
+
+# pages/sales_forecasting.py
 import io
 import streamlit as st
 import pandas as pd
@@ -14,6 +201,9 @@ from utils import custom_sidebar,require_upload
 import base64
 import os
 from auth import logout
+import uuid # Added for generating unique session IDs
+import db # Added for database operations (e.g., getting user ID)
+import feedback_module # Added for displaying the feedback form
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
@@ -114,7 +304,7 @@ with st.sidebar:
     st.page_link("pages/sales_forecasting.py", label="📈 Sales Forecasting")
     st.page_link("pages/setting.py", label="⚙️ Settings")
     if st.button("Logout"):
-        logout() 
+        logout()
 
 
 if not is_logged_in():
@@ -122,6 +312,14 @@ if not is_logged_in():
     st.switch_page("Home.py")
     st.stop()
 
+# Retrieve current user ID for feedback
+current_username = st.session_state.get('username')
+current_user_id = db.get_user_id_by_username(current_username) if current_username else None
+
+if current_user_id is None:
+    st.error("Could not retrieve user information. Please log in again.")
+    st.switch_page("Home.py")
+    st.stop()
 
 
 # ---- Load CSV ----
@@ -268,7 +466,7 @@ with left_col:
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
 # 1148d8
 
     labels = ["30 Days", "60 Days", "90 Days"]
@@ -284,7 +482,7 @@ with left_col:
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown("<strong>Forecast Target</strong>", unsafe_allow_html=True)
-    
+
     if 'Product' in df.columns:
         products = ['All Products'] + sorted(df['Product'].dropna().unique().tolist())
     else:
@@ -295,6 +493,9 @@ with left_col:
     generate_btn = st.button("🔮 Generate Forecast")
 
     if generate_btn:
+        # Generate a unique session ID for this analysis
+        analysis_session_id = str(uuid.uuid4())
+        st.session_state['current_analysis_session_id'] = analysis_session_id
 
         if 'Date' not in df.columns or 'Sales' not in df.columns:
             st.error("❌ Your CSV must include 'Date' and 'Sales' columns.")
@@ -322,7 +523,7 @@ with right_col:
 
     if generate_btn:
 
-        
+
         if 'Date' not in df.columns or 'Sales' not in df.columns:
             st.error("❌ Your CSV must include 'Date' and 'Sales' columns.")
             st.stop()
@@ -365,7 +566,7 @@ with right_col:
             forecast_text = response.choices[0].message.content
             import re, ast
             forecast = ast.literal_eval(re.findall(r'\[.*\]', forecast_text)[0])
-            
+
             last_value = actual[-1]
             forecast = np.clip(forecast, last_value * 0.7, last_value * 1.3)  # limit growth
             window = 5
@@ -387,7 +588,7 @@ with right_col:
         # For a continuous line, prepend the last actual to forecast
         df_actual = pd.DataFrame({'date': rng_actual, 'Sales': actual, 'Type': 'Actual'})
         df_forecast = pd.DataFrame({'date': rng_forecast, 'Sales': forecast, 'Type': 'Forecast'})
-        
+
         # Add bridge: first forecast point uses last actual value
         bridge = pd.DataFrame({
             'date': [df_actual['date'].iloc[-1]],  # last actual date
@@ -426,7 +627,7 @@ with right_col:
 
         chart = (line + points_actual_chart + points_forecast_chart).properties(height=320)
         st.altair_chart(chart, use_container_width=True)
-        
+
         forecast_text = response.choices[0].message.content
         forecast = ast.literal_eval(re.findall(r'\[.*\]', forecast_text)[0])
 
@@ -436,8 +637,8 @@ with right_col:
             {forecast}
             and recent actual data:
             {actual.tolist()}
-            
-            Identify the trend (rising, falling, or stable), and provide 3 specific, actionable recommendations 
+
+            Identify the trend (rising, falling, or stable), and provide 3 specific, actionable recommendations
             for improving or sustaining sales performance over the next {forecast_days} days.
             Focus on marketing, inventory, and pricing strategies.
             Format your response in short, concise phrasing as bullet points.
@@ -456,187 +657,13 @@ with right_col:
         st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
         st.markdown(recommendations_text)
 
+        # --- Feedback Section ---
+        # Display the feedback form after the analysis results
+        if current_user_id and 'current_analysis_session_id' in st.session_state:
+            feedback_module.display_feedback_form(current_user_id, st.session_state['current_analysis_session_id'])
+        else:
+            st.warning("Cannot display feedback form: user or session ID not found. Please ensure you are logged in.")
+
 
     else:
         st.info("👈 Select options and click '🔮 Generate Forecast' to see the forecast.")
-
-
-
-###############MPPK's CODE###############
-
-# import io
-# import streamlit as st
-# import pandas as pd
-# import altair as alt
-# import numpy as np
-# from datetime import datetime, timedelta
-# import os, re, ast
-# from dotenv import load_dotenv
-# from groq import Groq
-
-# # ========== PAGE CONFIG ==========
-# st.set_page_config(page_title="SalesSight - Forecast Dashboard", layout="wide")
-
-# # ========== LOAD CSV ==========
-# if "save_path" not in st.session_state:
-#     st.warning("⚠️ Please upload a CSV file first.")
-#     st.stop()
-
-# file_path = st.session_state.save_path
-# df = pd.read_csv(file_path)
-
-# # ========== LOAD ENV KEYS ==========
-# load_dotenv()
-# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-# if not GROQ_API_KEY:
-#     st.error("❌ GROQ_API_KEY not set in environment variables.")
-#     st.stop()
-# client = Groq(api_key=GROQ_API_KEY)
-
-# # ========== PAGE HEADER ==========
-# st.title("📊 SalesSight – AI Forecasting Dashboard")
-# st.caption("Analyze your sales trends and get personalized recommendations powered by LLaMA 3.3-70B")
-
-# # ========== CLEAN DATA ==========
-# if 'Date' not in df.columns or 'Sales' not in df.columns:
-#     st.error("Your CSV must contain at least 'Date' and 'Sales' columns.")
-#     st.stop()
-
-# df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-# df = df.dropna(subset=['Date', 'Sales']).sort_values('Date')
-
-# products = ['All Products'] + sorted(df['Product'].unique()) if 'Product' in df.columns else ['All Products']
-
-# # ========== SIDEBAR ==========
-# with st.sidebar:
-#     st.header("⚙️ Forecast Settings")
-#     forecast_label = st.radio(
-#         "Forecast Horizon",
-#         ["30 Days (Short-term)", "60 Days (Medium-term)", "90 Days (Long-term)"]
-#     )
-#     forecast_days = int(forecast_label.split()[0])
-#     product = st.selectbox("Product", products)
-#     st.markdown("---")
-#     generate_btn = st.button("🔮 Generate Forecast", use_container_width=True)
-
-# # ========== FILTER PRODUCT ==========
-# if product != "All Products" and 'Product' in df.columns:
-#     df = df[df['Product'] == product]
-
-# # ========== LEFT: KPI SUMMARY ==========
-# total_sales = df['Sales'].sum()
-# avg_sales = df['Sales'].mean()
-# latest_sales = df['Sales'].iloc[-1]
-# growth = ((df['Sales'].iloc[-1] - df['Sales'].iloc[-2]) / df['Sales'].iloc[-2] * 100) if len(df) > 2 else 0
-
-# col1, col2, col3, col4 = st.columns(4)
-# col1.metric("Total Sales", f"${total_sales:,.0f}")
-# col2.metric("Average Daily Sales", f"${avg_sales:,.0f}")
-# col3.metric("Latest Sales", f"${latest_sales:,.0f}")
-# col4.metric("Growth Rate", f"{growth:+.2f}%")
-
-# st.markdown("---")
-
-# # ========== RIGHT: FORECAST CHART ==========
-# if generate_btn:
-#     lookback = min(len(df), forecast_days * 2)
-#     actual_df = df.tail(lookback)
-#     rng_actual = actual_df['Date']
-#     actual = actual_df['Sales'].values
-
-#     # ========== LLM FORECAST ==========
-#     prompt = f"""
-#     You are a data analyst assistant.
-#     Here are the past {lookback} days of sales:
-#     {actual.tolist()}
-
-#     Forecast the next {forecast_days} days of sales as a Python list of {forecast_days} numeric values.
-#     Then, in 2 sentences, explain the likely trend (rising, falling, or stable).
-#     Respond in this exact format:
-#     [forecast_list]
-#     Explanation: your_text_here
-#     """
-
-#     try:
-#         response = client.chat.completions.create(
-#             model="llama-3.3-70b-versatile",
-#             messages=[{"role": "user", "content": prompt}]
-#         )
-#         content = response.choices[0].message.content
-#         forecast = ast.literal_eval(re.findall(r'\[.*?\]', content, re.S)[0])
-#         explanation_match = re.search(r"Explanation:(.*)", content, re.S)
-#         explanation = explanation_match.group(1).strip() if explanation_match else "No explanation provided."
-#     except Exception as e:
-#         st.error(f"❌ Forecast generation failed: {e}")
-#         forecast = [actual[-1]] * forecast_days
-#         explanation = "Using flat projection due to error."
-
-#     # ========== ENSURE FORECAST LENGTH ==========
-#     if len(forecast) != forecast_days:
-#         if len(forecast) > forecast_days:
-#             forecast = forecast[:forecast_days]
-#         else:
-#             forecast += [forecast[-1]] * (forecast_days - len(forecast))
-
-#     # ========== BUILD FORECAST DF ==========
-#     rng_forecast = pd.date_range(start=rng_actual.iloc[-1] + timedelta(days=1), periods=forecast_days)
-#     df_actual = pd.DataFrame({'Date': rng_actual, 'Sales': actual, 'Type': ['Actual'] * len(rng_actual)})
-#     df_forecast = pd.DataFrame({'Date': rng_forecast, 'Sales': forecast, 'Type': ['Forecast'] * forecast_days})
-#     df_combined = pd.concat([df_actual, df_forecast]).reset_index(drop=True)
-
-#     # ========== CHART ==========
-#     # Solid line for actual, dashed for forecast
-#     base = alt.Chart(df_combined).encode(
-#         x=alt.X('Date:T', title="Date"),
-#         y=alt.Y('Sales:Q', title="Sales ($)", scale=alt.Scale(zero=False)),
-#         color=alt.Color('Type:N', scale=alt.Scale(domain=['Actual','Forecast'], range=['#1E61D4','#34C759'])),
-#         tooltip=['Date:T', 'Sales:Q', 'Type:N']
-#     )
-
-#     line = base.mark_line().encode(
-#         strokeDash=alt.condition(
-#             alt.datum.Type == 'Forecast',
-#             alt.value([4,2]),
-#             alt.value([])
-#         )
-#     )
-
-#     points_actual = alt.Chart(df_actual).mark_point(filled=True, size=60, color='#1E61D4').encode(
-#         x='Date:T', y='Sales:Q'
-#     )
-
-#     points_forecast = alt.Chart(df_forecast).mark_point(filled=True, size=60, color='#34C759').encode(
-#         x='Date:T', y='Sales:Q'
-#     )
-
-#     chart = (line + points_actual + points_forecast).properties(height=400)
-#     st.altair_chart(chart, use_container_width=True)
-
-#     # ========== AI TREND INSIGHT ==========
-#     st.markdown("### 📈 AI Trend Insight")
-#     st.info(explanation)
-
-#     # ========== AI PERSONALIZED RECOMMENDATIONS ==========
-#     rec_prompt = f"""
-#     Based on the following forecasted sales data:
-#     {forecast}
-#     and the recent sales trend that {explanation},
-#     give 4 concise, personalized business recommendations
-#     for a sales manager to act on.
-#     Format them as bullet points with short actionable phrasing.
-#     """
-
-#     try:
-#         rec_response = client.chat.completions.create(
-#             model="llama-3.3-70b-versatile",
-#             messages=[{"role": "user", "content": rec_prompt}]
-#         )
-#         rec_text = rec_response.choices[0].message.content.strip()
-#     except Exception as e:
-#         rec_text = f"⚠️ Unable to generate AI recommendations: {e}"
-
-#     st.markdown("### 💡 Personalized Recommendations")
-#     st.markdown(rec_text)
-
-# else:
-#     st.info("👈 Configure your forecast settings in the sidebar and click **🔮 Generate Forecast** to begin.")
