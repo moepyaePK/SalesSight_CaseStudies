@@ -104,6 +104,47 @@ div[data-testid="stFileUploader"] section {
 .quality-divider {
     border-color: rgba(255,255,255,0.06) !important;
 }
+        /* ---------------------------------------------- */
+        /* 🎨 File Uploader "Browse files" Button Styles  */
+        /* ---------------------------------------------- */
+        
+        /* Base file uploader button styles */
+        section[data-testid="stFileUploader"] button,
+        div[data-testid="stFileUploader"] button {
+            background-color: #1e40af !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 8px 18px !important;
+            font-weight: 600 !important;
+            border: 1px solid #1e3a8a !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        /* File uploader button hover state */
+        section[data-testid="stFileUploader"] button:hover,
+        div[data-testid="stFileUploader"] button:hover {
+            background-color: #3b82f6 !important;
+            border: 1px solid #60a5fa !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* File uploader button active/pressed state */
+        section[data-testid="stFileUploader"] button:active,
+        div[data-testid="stFileUploader"] button:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        /* Ensure file uploader button text is white */
+        section[data-testid="stFileUploader"] button span,
+        div[data-testid="stFileUploader"] button span {
+            color: white !important;
+        }
+                            
+
+
 </style>
 """), unsafe_allow_html=True)
 

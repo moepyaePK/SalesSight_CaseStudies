@@ -40,6 +40,46 @@ st.markdown(
     .section-title, h1, h2, h3 {
         color: #ffffff !important;
     }
+
+        /* ---------------------------------------------- */
+        /* 🎨 Form Submit Button Styles                   */
+        /* ---------------------------------------------- */
+        
+        /* Base form submit button styles */
+        div.stFormSubmitButton > button,
+        button[kind="formSubmit"] {
+            background-color: #1e40af !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 12px 24px !important;
+            font-weight: 600 !important;
+            border: 1px solid #1e3a8a !important;
+            transition: all 0.3s ease !important;
+            width: 100% !important;
+        }
+        
+        /* Form submit button hover state */
+        div.stFormSubmitButton > button:hover,
+        button[kind="formSubmit"]:hover {
+            background-color: #3b82f6 !important;
+            border: 1px solid #60a5fa !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Form submit button active/pressed state */
+        div.stFormSubmitButton > button:active,
+        button[kind="formSubmit"]:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        /* Ensure form submit button text is white */
+        div.stFormSubmitButton > button p,
+        button[kind="formSubmit"] p {
+            color: white !important;
+        }
     </style>
     """,
     unsafe_allow_html=True,
