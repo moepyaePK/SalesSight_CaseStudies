@@ -11,15 +11,6 @@ import numpy as np
 from datetime import datetime, timedelta
 from auth import is_logged_in, logout
 from utils import require_upload, custom_sidebar
-import os
-from dotenv import load_dotenv
-from groq import Groq
-import altair as alt
-import numpy as np
-from datetime import datetime, timedelta
-from auth import is_logged_in, logout
-from utils import require_upload, custom_sidebar
-import os
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
