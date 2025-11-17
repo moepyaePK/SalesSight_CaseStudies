@@ -7,9 +7,9 @@ from utilities import custom_sidebar
 from utils.validation import validate_file_upload, validate_csv_structure
 from auth import require_auth, get_current_user
 from db import save_upload_record
-import base64
 from auth import logout
 from config import Config
+import textwrap
 
 st.set_page_config(page_title="SalesSight - Data Upload", layout="wide")
 
@@ -24,74 +24,88 @@ st.markdown("""
 
 custom_sidebar()
 
-
-
-st.markdown(
-    f"""
-    <style>
-        [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
-            padding-top: 0 !important;
-        }}
-        [data-testid="stSidebarNav"]::before {{
-            content: "";
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            height: 60px;
-            width: 100%;
-            background-color: #ffffff;
-            background-image: url("data:image/png;base64,{logo_base64}");
-            background-repeat: no-repeat;
-            background-size: 26px 26px;
-            background-position: 18px center;
-            border-bottom: 1px solid #f2f2f2;
-            position: relative;
-            z-index: 1;
-            pointer-events: none;
-        }}
-        [data-testid="stSidebarNav"]::after {{
-            content: "{title}";
-            position: absolute;
-            top: 18px;
-            left: 52px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 18px;
-            color: #1E90FF;
-            z-index: 1;
-            pointer-events: none;
-        }}
-        [data-testid="stSidebarNav"] {{
-            margin-top: -60px !important;
-            position: relative;
-            z-index: 0;
-        }}
-        [data-testid="stSidebarNav"] ul {{
-            padding-left: 10px;
-        }}
-        [data-testid="stSidebarNav"] li a {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-            color: #4B5563 !important;
-            transition: all 0.2s ease-in-out;
-        }}
-        [data-testid="stSidebarNav"] li a[data-testid="stSidebarNavLinkActive"] {{
-            background-color: #bbddfc !important;
-            color: #1E90FF !important;
-            font-weight: 600 !important;
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ---- Modern Dark UI Styles (match dashboard) ----
+st.markdown(textwrap.dedent("""
+<style>
+.stApp .main .block-container {
+    background-color: #0b0f14;
+    color: #e6eef8;
+    padding-top: 20px;
+}
+.stApp, .reportview-container, .main, header {
+    background-color: #0b0f14;
+}
+[data-testid="stSidebar"] {
+    background-color: #0f1720 !important;
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] a, [data-testid="stSidebar"] .st-Button button {
+    color: #f8fafc !important;
+}
+.stButton>button {
+    background-color: #111827 !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+div[data-testid="stFileUploader"] {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 24px;
+}
+div[data-testid="stFileUploader"] section {
+    justify-content: center;
+}
+.requirements-card {
+    border: 1px solid rgba(59,130,246,0.4);
+    background: rgba(59,130,246,0.08);
+    border-radius: 14px;
+    padding: 20px 24px;
+    color: #e2e8f0;
+    font-size: 14px;
+}
+.requirements-card ul {
+    padding-left: 18px;
+    margin-bottom: 0;
+}
+.status-card {
+    border-radius: 10px;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+}
+.upload-heading {
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:16px;
+}
+.upload-heading-icon {
+    font-size:32px;
+}
+.upload-heading-title {
+    font-size:34px;
+    font-weight:800;
+    color:#ffffff;
+}
+.upload-heading-desc {
+    color:#9aa4b2;
+    margin-bottom:26px;
+    max-width:720px;
+}
+.uploaded-section-title {
+    font-size:20px;
+    font-weight:600;
+    margin-top:30px;
+    color:#f8fafc;
+}
+.quality-divider {
+    border-color: rgba(255,255,255,0.06) !important;
+}
+</style>
+"""), unsafe_allow_html=True)
 
 with st.sidebar:
     st.page_link("pages/dashboard.py", label="📊 Dashboard")
@@ -254,8 +268,20 @@ def data_extraction(file_path):
 # Main UI
 # ============================================
 
-st.title("📤 Upload Sales Data")
-st.write("Upload your sales data file to start analyzing")
+st.markdown(
+    """
+    <div class="upload-heading">
+        <div class="upload-heading-icon">📤</div>
+        <div>
+            <div class="upload-heading-title">Upload & Validate Sales Data</div>
+            <div class="upload-heading-desc">
+                Import CSV or Excel files, run automated data quality checks, and prep your dataset for forecasting — all inside SalesSight.
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 col1, col2 = st.columns([1.5, 1])
 
@@ -271,21 +297,14 @@ with col1:
 with col2:
     st.markdown(
         """
-        <div style="
-            border: 1px solid #B3D4FC;
-            background-color: #F0F7FF;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            font-family: 'Segoe UI', sans-serif;
-        ">
-            <strong style="color:#2C6BED; font-size:16px;">📘 File Requirements</strong>
-            <ul style="margin-top: 10px; margin-bottom: 0; color:#333; font-size:14px;">
-                <li><strong>File formats:</strong> CSV, XLSX</li>
-                <li><strong>Maximum size:</strong> 200 MB</li>
+        <div class="requirements-card">
+            <strong style="color:#90c2ff; font-size:16px;">📘 File Requirements</strong>
+            <ul>
+                <li><strong>Formats:</strong> CSV or XLSX</li>
+                <li><strong>Max size:</strong> 200 MB</li>
                 <li><strong>Required columns:</strong> Date, Sales</li>
                 <li><strong>Optional:</strong> Product, Category</li>
-                <li><strong>Date format:</strong> YYYY-MM-DD or MM/DD/YYYY</li>
+                <li><strong>Date formats:</strong> YYYY-MM-DD or MM/DD/YYYY</li>
             </ul>
         </div>
         """,

@@ -20,6 +20,8 @@ st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
 custom_sidebar()
 
+
+# --- Sidebar Content ---
 with st.sidebar:
     st.page_link("pages/dashboard.py", label="📊 Dashboard")
     st.page_link("pages/data_upload.py", label="📂 Upload")
@@ -36,41 +38,53 @@ if not is_logged_in():
 
 
 
-# ---- Load CSV with File Selector ----
-from auth import get_current_user
-from utilities import show_file_selector
+# ---- Load CSV ----
+# Ensure a file path string exists and is readable. Show friendly message otherwise.
 
-user = get_current_user()
-if not user:
-    st.error("⚠️ Please login first")
-    st.switch_page("Home.py")
+if "save_path" not in st.session_state or not isinstance(st.session_state.get("save_path"), str):
+    with open("logo.png", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode()
+
+    st.markdown(
+        f"""
+        <div style='text-align:center; padding:60px;'>
+            <img src="data:image/png;base64,{logo_base64}" width="60" style="margin-bottom:20px;" />
+            <h2 style='color:#6c63ff;'>No file uploaded yet 📂</h2>
+            <p style='font-size:16px; color:#666;'>Please upload your sales CSV file on the <b>Data Upload</b> page to use forecasting.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.stop()
 
-# Show file selector in sidebar
-file_path = show_file_selector()
+file_path = st.session_state.get("save_path")
 
-if not file_path:
-    st.warning("⚠️ No uploaded files found. Please upload a CSV file first.")
-    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
-    st.stop()
-
-# Verify file exists
-if not os.path.exists(file_path):
-    st.error(f"❌ File not found")
-    st.warning("⚠️ The file may have been deleted. Please upload a new CSV file.")
-    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
-    st.stop()
-
-# Load the CSV
 try:
     df = pd.read_csv(file_path)
-    
-    # Show currently selected file info
-    st.info(f"📊 **Analyzing:** {os.path.basename(file_path)}")
-    
 except Exception as e:
-    st.error(f"❌ Error reading file: {e}")
+    st.error("❌ Unable to read the uploaded file. Please re-upload a CSV file on the Data Upload page.")
+    st.exception(e)
     st.stop()
+
+# Apply strict black theme CSS for forecasting page after a successful file load
+st.markdown(
+    """
+    <style>
+    /* Forecasting page: pure black background and crisp white text after file load */
+    .stApp .main .block-container { background-color: #000000 !important; color: #ffffff !important; }
+    .stApp, .reportview-container, .main, header { background-color: #000000 !important; }
+    /* Cards and containers use black panels */
+    .card, .recommended, .radio-card { background: #000000 !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.03) !important; box-shadow: none !important; }
+    /* Headings and text */
+    .section-title, h1, h2, h3 { color: #ffffff !important; }
+    /* Buttons (subtle dark style with enough contrast) */
+    .stButton>button { background-color: #111827 !important; color: #ffffff !important; border-radius: 8px !important; }
+    /* Chart text/readability */
+    .vega-embed text, .vega-embed .mark-text { fill: #ffffff !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ---- Summaries ----
 product_summary = df.groupby('Product')['Sales'].sum().reset_index()
@@ -86,10 +100,6 @@ if not GROQ_API_KEY:
 client = Groq(api_key=GROQ_API_KEY)
 
 st.title("Sales Forecasting Dashboard")
-
-
-# (Removed always-on dark theme block — theming is applied only after a successful file load above.)
-
 
 st.markdown("<div class='section-title' style='margin-bottom:24px;'>Sales Forecasting : Configure Forecast Parameters and Generate Predictive Sales Analytics</div>", unsafe_allow_html=True)
 
@@ -112,8 +122,6 @@ with left_col:
     </style>
     """, unsafe_allow_html=True)
 
-# 1148d8
-
     labels = ["30 Days", "60 Days", "90 Days"]
     sublabels = [" SHT-term Forecast", "MED-term Forecast", "LNG-term Forecast"]
 
@@ -133,7 +141,6 @@ with left_col:
     else:
         products = ['All Products']
 
-    # Place selectbox in a slightly wider column to improve usability
     prod_col, _ = st.columns([3, 4])
     product = prod_col.selectbox("", products)
 
@@ -263,10 +270,10 @@ with right_col:
             )
         )
 
-        points_actual_chart = alt.Chart(df_actual).mark_point(filled=True, size=10, color='#ffffff').encode(
+        points_actual_chart = alt.Chart(df_actual).mark_point(filled=True, size=10, color='black').encode(
             x='date:T', y='Sales:Q'
         )
-        points_forecast_chart = alt.Chart(df_forecast.iloc[1::3, :] if forecast_days > 30 else df_forecast.iloc[1:, :]).mark_point(filled=True, size=10, color='#ffffff').encode(
+        points_forecast_chart = alt.Chart(df_forecast.iloc[1::3, :] if forecast_days > 30 else df_forecast.iloc[1:, :]).mark_point(filled=True, size=10, color='black').encode(
             x='date:T', y='Sales:Q'
         )
 
@@ -302,7 +309,14 @@ with right_col:
         st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
         st.markdown(recommendations_text)
     else:
-        st.info("👈 Select options and click '🔮 Generate Forecast' to see the forecast.")
+        st.markdown(
+            """
+            <div class='info-msg' style='background:#000000;color:#ffffff;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);'>
+            👈 Select options and click '🔮 Generate Forecast' to see the forecast.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         
         
         # --- Feedback Form ---

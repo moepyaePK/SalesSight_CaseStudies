@@ -3,7 +3,6 @@ from utilities import custom_sidebar
 from auth import require_auth, get_current_user, logout
 from db import get_user_by_id, update_user_profile, change_password, get_user_uploads, get_user_feedback
 from utils.validation import validate_email, validate_username, validate_password
-import base64
 from datetime import datetime, timezone
 from config import Config
 
@@ -12,14 +11,40 @@ st.set_page_config(page_title="SalesSight - Settings", layout="wide")
 # Authentication check
 require_auth()
 
-st.markdown("""
-<style>
-[data-testid="stSidebarNav"] {display: none !important;}
-</style>
-""", unsafe_allow_html=True)
 custom_sidebar()
 
-# --- Sidebar Content ---
+st.markdown(
+    """
+    <style>
+    .stApp .main .block-container {
+        background-color: #0b0f14;
+        color: #e6eef8;
+        padding-top: 20px;
+    }
+    .stApp, .reportview-container, .main, header {
+        background-color: #0b0f14;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #0f1720 !important;
+        color: #ffffff !important;
+    }
+    [data-testid="stSidebar"] a, [data-testid="stSidebar"] .st-Button button {
+        color: #f8fafc !important;
+    }
+    .stButton>button {
+        background-color: #111827 !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    .section-title, h1, h2, h3 {
+        color: #ffffff !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 with st.sidebar:
     st.page_link("pages/dashboard.py", label="📊 Dashboard")
     st.page_link("pages/data_upload.py", label="📂 Upload")
