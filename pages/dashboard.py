@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from pages.data_upload import data_extraction
-from utils import custom_sidebar,require_upload
+from utilities import custom_sidebar,require_upload
 from auth import is_logged_in
 from auth import logout
 import base64
@@ -120,7 +120,16 @@ if not is_logged_in():
     st.switch_page("Home.py")
     st.stop()
 
+from utilities import show_file_selector
 
+file_path = show_file_selector()
+
+if not file_path:
+    st.warning("⚠️ Please upload a CSV file first.")
+    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
+    st.stop()
+
+df = pd.read_csv(file_path)
 
 # ---- If file not uploaded ----
 if "save_path" not in st.session_state:
@@ -178,23 +187,5 @@ else:
             else:
                 st.info("No 'Product' column found for ranking.")
 
-        st.markdown("---")
 
-        # # ---- Optional: Monthly Sales Heatmap ----
-        if metrics.get("sales_trend") is not None and not metrics["sales_trend"].empty:
-            st.subheader("🗓 Monthly Sales Heatmap")
-            df_heatmap = metrics["sales_trend"].copy()
-            df_heatmap['Month'] = pd.to_datetime(df_heatmap['Date']).dt.to_period('M').dt.to_timestamp()
-            df_heatmap['Day'] = pd.to_datetime(df_heatmap['Date']).dt.day
-
-            heatmap = alt.Chart(df_heatmap).mark_rect().encode(
-                x=alt.X('Day:O', title="Day of Month"),
-                y=alt.Y('Month:T', title="Month"),
-                color=alt.Color('Sales:Q', scale=alt.Scale(scheme='greens'), title='Sales ($)'),
-                tooltip=[
-                    alt.Tooltip('Date:T', title='Date'),
-                    alt.Tooltip('Sales:Q', title='Sales', format='$,.0f')
-                ]
-            ).properties(height=400)
-
-            st.altair_chart(heatmap, use_container_width=True)
+        
