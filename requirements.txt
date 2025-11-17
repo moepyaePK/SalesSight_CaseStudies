@@ -1,9 +1,45 @@
-plotly
-streamlit
-pandas
-numpy
-openai
-python-dotenv
-altair
-groq
-sqlalchemy
+# ============================================
+# SalesSight - Python Dependencies
+# ============================================
+# Install with: pip install -r requirements.txt
+
+# Core Framework
+streamlit==1.39.0
+
+# Database & Authentication
+supabase==2.10.0
+bcrypt==4.2.1
+python-dotenv==1.0.1
+
+# Data Processing
+pandas==2.2.3
+numpy==2.2.0
+openpyxl==3.1.5  # For Excel file support
+
+# Visualization
+altair==5.4.1
+plotly==5.24.1
+
+# AI/ML
+groq==0.11.0
+
+# Date/Time
+python-dateutil==2.9.0
+
+# Optional: For email notifications (Feature D)
+# email-validator==2.2.0
+
+# Optional: For PDF export (Feature G)
+# reportlab==4.2.5
+# matplotlib==3.9.2
+
+# Optional: For advanced analytics (Feature B)
+# scikit-learn==1.5.2
+# statsmodels==0.14.4
+# prophet==1.1.6
+
+# Development Dependencies (Optional)
+# pytest==8.3.3
+# pytest-cov==6.0.0
+# black==24.8.0
+# flake8==7.1.1

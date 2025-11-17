@@ -7,8 +7,12 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from pages.data_upload import data_extraction
-from utils import custom_sidebar
-from auth import is_logged_in, logout
+from utilities import custom_sidebar,require_upload
+from auth import is_logged_in
+from auth import logout
+import base64
+import os
+
 
 
 # ---- Page Config ----
@@ -53,12 +57,16 @@ if not is_logged_in():
     st.switch_page("Home.py")
     st.stop()
 
+from utilities import show_file_selector
 
-# ---- If no file uploaded: show centered dashed upload card ----
-if "save_path" not in st.session_state or not isinstance(st.session_state.get("save_path"), str):
-    st.markdown(textwrap.dedent("""
-    <div style='display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 0;'>
-      <h2 style='color:#6c63ff;font-size:30px;margin:0 0 10px 0;'>No file uploaded yet 📂</h2>
+file_path = show_file_selector()
+
+if not file_path:
+    st.warning("⚠️ Please upload a CSV file first.")
+    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
+    st.stop()
+
+df = pd.read_csv(file_path)
 
       <div style='width:820px;max-width:92%;border-radius:12px;border:2px dashed rgba(255,255,255,0.06);padding:36px 20px;background:rgba(255,255,255,0.008);display:flex;align-items:center;justify-content:center;'>
         <div style='text-align:center;color:#cbd5e1;display:flex;flex-direction:column;align-items:center;gap:8px;'>
@@ -113,4 +121,5 @@ else:
             else:
                 st.info("No product ranking available.")
 
-        st.markdown("---")
+
+        

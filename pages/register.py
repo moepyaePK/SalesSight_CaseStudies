@@ -1,78 +1,146 @@
 import streamlit as st
-from auth import register_user , add_user
-from db import is_valid_email
+from auth import register_user
+from config import Config
 
-# ---- Hide Sidebar Completely (including arrow + space) ----
+st.set_page_config(page_title="SalesSight - Register", layout="wide")
+
+# ---- Hide Sidebar Completely ----
 hide_sidebar_style = """
     <style>
-        /* Hide the sidebar completely */
         [data-testid="stSidebar"], 
         [data-testid="stSidebarNav"], 
         [data-testid="stSidebarCollapsedControl"],
         section[data-testid="stSidebar"] {
             display: none !important;
         }
-
-        /* Hide the expand/collapse button (for older/newer versions) */
         button[title="Expand sidebar"], 
         button[kind="header"], 
         [data-testid="baseButton-header"] {
             display: none !important;
         }
-
-        /* Remove sidebar space and expand main view fully */
         [data-testid="stAppViewContainer"] {
             margin-left: 0 !important;
             width: 100% !important;
         }
-
-        /* Remove any internal padding */
         [data-testid="stVerticalBlock"] > div:first-child {
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
-
-        /* Optional: hide top navbar dropdown if present */
         [data-testid="stHeaderActionElements"] {
             display: none !important;
         }
     </style>
 """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
-# --------------------------------------------------------
 
+# ---- Main Content ----
+st.title("📝 Create Your Account")
+st.write("Join SalesSight to start analyzing your sales data")
 
+# Create two columns for layout
+col1, col2 = st.columns([1, 1])
 
-st.title("📝 Register New Account")
-username = st.text_input("Username")
-email = st.text_input("Email")
-password = st.text_input("Password", type="password")
-confirm_password = st.text_input("Confirm Password", type="password")
-
-if st.button("Register"):
-    # Basic validation
-    if not username or not email or not password or not confirm_password:
-        st.warning("⚠️ Please fill in all fields.")
-    elif password != confirm_password:
-        st.warning("⚠️ Passwords do not match.")
-    elif not is_valid_email(email):
-        st.warning("⚠️ Invalid email address. Please enter a valid email.")
-    else:
-        try:
-            add_user(username, email, password)
-            st.switch_page("pages/login.py")
-            st.success("✅ Registration successful! You can now login.")
-            st.info("Go to the login page to access your account.")
-        except Exception as e:
-            if "UNIQUE constraint failed: users.username" in str(e):
-                st.error("⚠️ Username already exists. Choose another one.")
-            elif "UNIQUE constraint failed: users.email" in str(e):
-                st.error("⚠️ Email already registered. Try logging in.")
+with col1:
+    st.markdown("### Account Information")
+    
+    with st.form("registration_form"):
+        username = st.text_input(
+            "Username",
+            placeholder="Choose a unique username",
+            help="3-30 characters, letters, numbers, underscores and hyphens only"
+        )
+        
+        email = st.text_input(
+            "Email Address",
+            placeholder="your.email@example.com",
+            help="We'll never share your email with anyone"
+        )
+        
+        password = st.text_input(
+            "Password",
+            type="password",
+            placeholder="Create a strong password",
+            help=f"At least {Config.MIN_PASSWORD_LENGTH} characters with uppercase, lowercase, number, and special character"
+        )
+        
+        confirm_password = st.text_input(
+            "Confirm Password",
+            type="password",
+            placeholder="Re-enter your password"
+        )
+        
+        # Terms and conditions checkbox
+        terms_accepted = st.checkbox(
+            "I agree to the Terms of Service and Privacy Policy",
+            value=False
+        )
+        
+        submit_button = st.form_submit_button("Create Account", use_container_width=True)
+        
+        if submit_button:
+            # Validation
+            if not username or not email or not password or not confirm_password:
+                st.error("⚠️ Please fill in all fields")
+            elif password != confirm_password:
+                st.error("⚠️ Passwords do not match")
+            elif not terms_accepted:
+                st.error("⚠️ Please accept the Terms of Service to continue")
             else:
-                st.error(f"⚠️ Registration failed: {e}")
+                # Attempt registration
+                with st.spinner("Creating your account..."):
+                    result = register_user(username, email, password)
+                    
+                    if result['success']:
+                        st.success("✅ Account created successfully!")
+                        st.balloons()
+                        st.info("🔐 Redirecting to login page...")
+                        st.session_state['registration_success'] = True
+                        st.session_state['registered_email'] = email
+                        # Use rerun instead of experimental_rerun
+                        st.rerun()
+                    else:
+                        st.error(f"❌ {result['message']}")
 
+with col2:
+    st.markdown("### Why Choose SalesSight?")
+    
+    features = [
+        ("📊", "Interactive Dashboards", "Visualize your sales data with beautiful, customizable charts"),
+        ("🤖", "AI-Powered Forecasting", "Get accurate sales predictions using advanced machine learning"),
+        ("📈", "Trend Analysis", "Identify patterns and opportunities in your sales data"),
+        ("🔒", "Secure & Private", "Your data is encrypted and protected with industry-standard security"),
+        ("📤", "Easy Export", "Download reports in CSV, Excel, or PDF format"),
+        ("⚡", "Lightning Fast", "Process and analyze thousands of records in seconds")
+    ]
+    
+    for icon, title, description in features:
+        st.markdown(
+            f"""
+            <div style="
+                padding: 12px;
+                margin: 10px 0;
+                border-left: 3px solid #1E90FF;
+                background-color: #F0F7FF;
+                border-radius: 5px;
+            ">
+                <div style="font-size: 20px; margin-bottom: 5px;">{icon} <strong>{title}</strong></div>
+                <div style="color: #555; font-size: 14px;">{description}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 st.markdown("---")
-st.write("Already have an account?")
-if st.button("📝 Login"):
+
+# Already have account section
+col1, col2 = st.columns([3, 1])
+with col1:
+    st.markdown("Already have an account?")
+with col2:
+    if st.button("🔐 Login", use_container_width=True):
+        st.switch_page("pages/login.py")
+
+# Check if redirecting after successful registration
+if 'registration_success' in st.session_state and st.session_state['registration_success']:
+    st.session_state['registration_success'] = False
     st.switch_page("pages/login.py")
