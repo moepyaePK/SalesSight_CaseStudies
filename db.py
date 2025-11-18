@@ -110,7 +110,29 @@ def clear_login_attempts(email: str):
         supabase.table('login_attempts').delete().eq('email', email.lower()).execute()
     except Exception as e:
         print(f"Error clearing login attempts: {e}")
-
+        
+def delete_upload(upload_id: int, user_id: int) -> bool:
+    """
+    Delete a file upload record from database.
+    
+    Args:
+        upload_id: ID of the upload to delete
+        user_id: User's unique identifier (for verification)
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # Verify the upload belongs to the user before deleting
+        result = supabase.table('upload_history').delete().eq('id', upload_id).eq('user_id', user_id).execute()
+        
+        # Check if any rows were deleted
+        deleted = bool(result.data)
+        
+        return deleted
+    except Exception as e:
+        print(f"Error deleting upload: {e}")
+        return False
 
 # ============================================
 # User Management Functions
