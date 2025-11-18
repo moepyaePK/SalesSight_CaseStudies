@@ -1,8 +1,6 @@
-import io
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import openai
 import os
 from dotenv import load_dotenv
 from groq import Groq
