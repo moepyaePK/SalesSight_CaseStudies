@@ -38,7 +38,7 @@ st.markdown(
     f"""
     <style>
         [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
+            background-color: #000000 !important;
             padding-top: 0 !important;
         }}
 

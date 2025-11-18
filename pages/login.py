@@ -100,7 +100,7 @@ with col2:
     st.markdown(
         """
         <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1E61D4 0%, #764ba2 100%);
             padding: 30px;
             border-radius: 10px;
             color: white;

@@ -16,7 +16,7 @@ import os
 from auth import logout
 import db # NEW: Import the database module
 
-st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
+st.set_page_config(page_title="SalesSight - Sales Forecasting", layout="wide")
 
 custom_sidebar()
 
@@ -39,7 +39,7 @@ st.markdown(
     f"""
     <style>
         [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
+            background-color: #000000 !important;
             padding-top: 0 !important;
         }}
 
@@ -50,7 +50,7 @@ st.markdown(
             justify-content: flex-start;
             height: 60px;
             width: 100%;
-            background-color: #ffffff;
+            background-color: #1E61D4;
             background-image: url("data:image/png;base64,{logo_base64}");
             background-repeat: no-repeat;
             background-size: 26px 26px;
@@ -69,7 +69,7 @@ st.markdown(
             font-family: 'Inter', sans-serif;
             font-weight: 600;
             font-size: 18px;
-            color: #1E90FF;
+            color: #1E61D4;
             z-index: 1;
             pointer-events: none;
         }}
@@ -94,13 +94,13 @@ st.markdown(
             font-family: 'Inter', sans-serif;
             font-size: 15px;
             font-weight: 500;
-            color: #4B5563 !important;
+            color: #1E61D4 !important;
             transition: all 0.2s ease-in-out;
         }}
 
         [data-testid="stSidebarNav"] li a[data-testid="stSidebarNavLinkActive"] {{
             background-color: #bbddfc !important;
-            color: #1E90FF !important;
+            color: #1E61D4 !important;
             font-weight: 600 !important;
         }}
     </style>
@@ -182,11 +182,11 @@ st.markdown(
     <style>
     /* general background and container spacing */
     .reportview-container, .main, header, .stApp {
-        background-color: #f6f7fb;
+        background-color: #0E1117;
     }
     /* sidebar style */
     .sidebar .sidebar-content {
-        background: #ffffff;
+        background: #000000;
         padding-top: 14px;
     }
     /* Logo in sidebar */
@@ -205,13 +205,13 @@ st.markdown(
         margin: 6px 8px;
     }
     .nav-item.selected {
-        background-color: #f1f6ff;
+        background-color: #1148d8;
         color: #1155cc;
         font-weight: 600;
     }
     /* left control card look */
     .card {
-        background: #ffffff;
+        background: #000000;
         padding: 18px;
         border-radius: 8px;
         box-shadow: 0 1px 0 rgba(16,24,40,0.04);
@@ -224,7 +224,7 @@ st.markdown(
         margin-bottom:8px;
     }
     .generate-btn {
-        background-color:#1148d8;
+        background-color:#1148d8 !important;
         color:white;
         padding:12px 18px;
         border-radius:8px;
@@ -242,7 +242,7 @@ st.markdown(
         margin-bottom:12px;
     }
     .recommended {
-        background: #ffffff;
+        background: #000000;
         padding: 18px;
         border-radius:8px;
     }
@@ -265,7 +265,7 @@ with left_col:
     <style>
     /* Make each radio label look like a card */
     div[role="radiogroup"] > label {
-        background-color: white;
+        background-color: #000000;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 12px 14px;
@@ -276,12 +276,10 @@ with left_col:
         cursor: pointer;
         transition: all 0.2s ease-in-out;
     }
-    div[role="radiogroup"] > label:hover {
-        background-color: #f1f6ff;
-        border-color: #2563eb;
+   
     }
     div[role="radiogroup"] input:checked + div {
-        color: #03045e !important;
+        color: #1E61D4 !important;
         font-weight: 700 !important;
     }
     /* Style the main and sub text lines separately */

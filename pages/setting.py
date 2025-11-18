@@ -31,7 +31,7 @@ st.markdown(
     f"""
     <style>
         [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
+            background-color: #000000 !important;
             padding-top: 0 !important;
         }}
         [data-testid="stSidebarNav"]::before {{
@@ -41,7 +41,7 @@ st.markdown(
             justify-content: flex-start;
             height: 60px;
             width: 100%;
-            background-color: #ffffff;
+            background-color: #1E61D4;
             background-image: url("data:image/png;base64,{logo_base64}");
             background-repeat: no-repeat;
             background-size: 26px 26px;
@@ -86,7 +86,7 @@ st.markdown(
         }}
         [data-testid="stSidebarNav"] li a[data-testid="stSidebarNavLinkActive"] {{
             background-color: #bbddfc !important;
-            color: #1E90FF !important;
+            color: #1E61D4 !important;
             font-weight: 600 !important;
         }}
     </style>
@@ -326,7 +326,7 @@ with tab3:
                 <div style="
                     padding: 10px;
                     border-left: 3px solid #1E90FF;
-                    background-color: #F8F9FA;
+                    background-color: #1E61D4;
                     margin: 10px 0;
                     border-radius: 5px;
                 ">

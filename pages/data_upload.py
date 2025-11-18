@@ -35,7 +35,7 @@ st.markdown(
     f"""
     <style>
         [data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
+            background-color: #000000 !important;
             padding-top: 0 !important;
         }}
         [data-testid="stSidebarNav"]::before {{
@@ -277,15 +277,15 @@ with col2:
     st.markdown(
         """
         <div style="
-            border: 1px solid #B3D4FC;
-            background-color: #F0F7FF;
+            border: 1px solid #1E61D4;
+            background-color: #000000;
             border-radius: 8px;
             padding: 15px 20px;
             margin-bottom: 20px;
             font-family: 'Segoe UI', sans-serif;
         ">
-            <strong style="color:#2C6BED; font-size:16px;">📘 File Requirements</strong>
-            <ul style="margin-top: 10px; margin-bottom: 0; color:#333; font-size:14px;">
+            <strong style="color:#ffffff; font-size:16px;">📘 File Requirements</strong>
+            <ul style="margin-top: 10px; margin-bottom: 0; color:#ffffff; font-size:14px;">
                 <li><strong>File formats:</strong> CSV, XLSX</li>
                 <li><strong>Maximum size:</strong> 200 MB</li>
                 <li><strong>Required columns:</strong> Date, Sales</li>

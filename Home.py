@@ -39,6 +39,21 @@ hide_sidebar_style = """
         [data-testid="stHeaderActionElements"] {
             display: none !important;
         }
+
+        /* Light blue styling for login and register buttons */
+        .stButton > button {
+            background-color: #1E61D4 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 5px !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500 !important;
+        }
+        
+        .stButton > button:hover {
+            background-color: #5DADE2 !important;
+            color: white !important;
+        }
     </style>
 """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
