@@ -2,10 +2,8 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from pages.data_upload import data_extraction
-from utilities import custom_sidebar, require_upload
-from auth import is_logged_in
-from auth import logout
+from utilities import custom_sidebar, show_file_selector
+from auth import is_logged_in, get_current_user, logout
 import base64
 import os
 
@@ -14,10 +12,6 @@ import os
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
 custom_sidebar()
-
-st.title("📊 SalesSight Dashboard")
-st.caption("Overview of sales metrics, top products, and trends")
-
 
 st.markdown("""
 <style>
@@ -114,13 +108,26 @@ with st.sidebar:
     if st.button("Logout"):
         logout() 
 
+# Check if user is logged in
 if not is_logged_in():
-    st.warning("You must be logged in to access the Dashboard.")
+    st.warning("⚠️ You must be logged in to access the Dashboard.")
     st.switch_page("Home.py")
     st.stop()
 
-# ---- If file not uploaded ----
-if "save_path" not in st.session_state:
+# Get current user
+user = get_current_user()
+if not user:
+    st.error("⚠️ Please login first")
+    st.switch_page("Home.py")
+    st.stop()
+
+st.title("📊 SalesSight Dashboard")
+st.caption("Overview of sales metrics, top products, and trends")
+
+# Show file selector in sidebar
+file_path = show_file_selector()
+
+if not file_path:
     st.markdown(
         """
         <div style='text-align:center; padding:60px;'>
@@ -131,48 +138,98 @@ if "save_path" not in st.session_state:
         """,
         unsafe_allow_html=True
     )
+    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
     st.stop()
-else:
-    # ---- Extract metrics ----
-    metrics = data_extraction(st.session_state.save_path)
 
-    if "error" in metrics:
-        st.error(metrics["error"])
-    else:
-        # ---- KPI Cards (sales only) ----
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Sales", f"${metrics['total_sales']:,.0f}")
-        col2.metric("Average Daily Sales", f"${metrics['avg_sales']:,.0f}")
-        col3.metric("Latest Sales", f"${metrics['latest_sales']:,.0f}")
-        col4.metric("Growth Rate", f"{metrics['growth']:+.2f}%")
+# Verify file exists
+if not os.path.exists(file_path):
+    st.error(f"❌ File not found")
+    st.warning("⚠️ The file may have been deleted. Please upload a new CSV file.")
+    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
+    st.stop()
 
-        st.markdown("---")
+# Load the CSV
+try:
+    df = pd.read_csv(file_path)
+    
+    # Show currently selected file info
+    st.info(f"📊 **Analyzing:** {os.path.basename(file_path)}")
+    
+except Exception as e:
+    st.error(f"❌ Error reading file: {e}")
+    st.stop()
 
-        # ---- Layout: Sales Trend & Top Products ----
-        left_col, right_col = st.columns((2, 1))
-
-        with left_col:
-            st.subheader("📈 Sales Trend (Last 12 Months)")
-            if metrics.get("sales_trend") is not None and not metrics["sales_trend"].empty:
-                df_trend = metrics["sales_trend"].copy()
-                df_trend['Month'] = pd.to_datetime(df_trend['Date']).dt.to_period('M').dt.to_timestamp()
-
-                chart = alt.Chart(df_trend).mark_line(point=True).encode(
-                    x=alt.X('Month:T', title="Month"),
-                    y=alt.Y('Sales:Q', title="Sales ($)"),
-                    tooltip=[
-                        alt.Tooltip('Month:T', title='Month'),
-                        alt.Tooltip('Sales:Q', title='Sales', format='$,.0f')
-                    ]
-                ).properties(height=350)
-                st.altair_chart(chart, use_container_width=True)
-            else:
-                st.info("No 'Date' column found for trend visualization.")
+# ---- Process Data and Extract Metrics ----
+try:
+    # Calculate metrics
+    total_sales = df['Sales'].sum() if 'Sales' in df.columns else 0
+    avg_sales = df['Sales'].mean() if 'Sales' in df.columns else 0
+    latest_sales = df['Sales'].iloc[-1] if 'Sales' in df.columns and len(df) > 0 else 0
+    
+    # Calculate growth rate (comparing last 30 days vs previous 30 days)
+    if 'Date' in df.columns and 'Sales' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df = df.dropna(subset=['Date']).sort_values('Date')
         
-        with right_col:
-            st.subheader("🏆 Top Products")
-            if metrics.get("top_products") is not None and not metrics["top_products"].empty:
-                for _, row in metrics["top_products"].iterrows():
-                    st.write(f"**{row['Product']}** — ${row['Sales']:,.0f}")
-            else:
-                st.info("No 'Product' column found for ranking.")
+        if len(df) >= 60:
+            recent_sales = df.tail(30)['Sales'].sum()
+            previous_sales = df.iloc[-60:-30]['Sales'].sum()
+            growth = ((recent_sales - previous_sales) / previous_sales * 100) if previous_sales > 0 else 0
+        else:
+            growth = 0
+    else:
+        growth = 0
+    
+    # Get top products
+    if 'Product' in df.columns and 'Sales' in df.columns:
+        top_products = df.groupby('Product')['Sales'].sum().reset_index().sort_values('Sales', ascending=False).head(5)
+    else:
+        top_products = pd.DataFrame()
+    
+    # Get sales trend
+    if 'Date' in df.columns and 'Sales' in df.columns:
+        sales_trend = df[['Date', 'Sales']].copy()
+    else:
+        sales_trend = pd.DataFrame()
+    
+    # ---- KPI Cards ----
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Sales", f"${total_sales:,.0f}")
+    col2.metric("Average Daily Sales", f"${avg_sales:,.0f}")
+    col3.metric("Latest Sales", f"${latest_sales:,.0f}")
+    col4.metric("Growth Rate", f"{growth:+.2f}%")
+
+    st.markdown("---")
+
+    # ---- Layout: Sales Trend & Top Products ----
+    left_col, right_col = st.columns((2, 1))
+
+    with left_col:
+        st.subheader("📈 Sales Trend (Last 12 Months)")
+        if not sales_trend.empty:
+            df_trend = sales_trend.copy()
+            df_trend['Month'] = pd.to_datetime(df_trend['Date']).dt.to_period('M').dt.to_timestamp()
+
+            chart = alt.Chart(df_trend).mark_line(point=True).encode(
+                x=alt.X('Month:T', title="Month"),
+                y=alt.Y('Sales:Q', title="Sales ($)"),
+                tooltip=[
+                    alt.Tooltip('Month:T', title='Month'),
+                    alt.Tooltip('Sales:Q', title='Sales', format='$,.0f')
+                ]
+            ).properties(height=350)
+            st.altair_chart(chart, use_container_width=True)
+        else:
+            st.info("No 'Date' column found for trend visualization.")
+    
+    with right_col:
+        st.subheader("🏆 Top Products")
+        if not top_products.empty:
+            for _, row in top_products.iterrows():
+                st.write(f"**{row['Product']}** — ${row['Sales']:,.0f}")
+        else:
+            st.info("No 'Product' column found for ranking.")
+            
+except Exception as e:
+    st.error(f"❌ Error processing data: {e}")
+    st.stop()
