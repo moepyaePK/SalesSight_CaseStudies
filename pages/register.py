@@ -120,7 +120,7 @@ with col2:
                 padding: 12px;
                 margin: 10px 0;
                 border-left: 3px solid #1E90FF;
-                background-color: #F0F7FF;
+                background-color: #131720;
                 border-radius: 5px;
             ">
                 <div style="font-size: 20px; margin-bottom: 5px;">{icon} <strong>{title}</strong></div>

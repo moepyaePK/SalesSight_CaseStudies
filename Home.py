@@ -3,6 +3,8 @@ from auth import is_logged_in, logout
 
 st.set_page_config(page_title="SalesSight - Home", layout="wide")
 
+st.write("Theme primaryColor:", st._config.get_option("theme.primaryColor"))
+
 
 
 # ---- Hide Sidebar Completely (including arrow + space) ----
