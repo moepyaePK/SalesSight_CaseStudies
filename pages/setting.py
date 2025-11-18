@@ -1,11 +1,12 @@
 import streamlit as st
 from utilities import custom_sidebar
 from auth import require_auth, get_current_user, logout
-from db import get_user_by_id, update_user_profile, change_password, get_user_uploads, get_user_feedback
+from db import get_user_by_id, update_user_profile, change_password, get_user_uploads, get_user_feedback, delete_upload
 from utils.validation import validate_email, validate_username, validate_password
 import base64
 from datetime import datetime, timezone
 from config import Config
+import os
 
 st.set_page_config(page_title="SalesSight - Settings", layout="wide")
 
@@ -298,23 +299,66 @@ with tab3:
     )    
     st.markdown("---")
     
-    # In TAB 3: Activity History, after showing recent uploads:
-
+    # Manage Upload History
     st.markdown("### 🗂️ Manage Upload History")
 
     if uploads:
         for upload in uploads:
-            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+            col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
             
             col1.write(f"📄 {upload['filename']}")
             col2.write(f"{upload['file_size'] / 1024 / 1024:.2f} MB")
             col3.write(datetime.fromisoformat(upload['uploaded_at']).strftime('%m/%d/%Y'))
             
-            # Add a "Use This File" button
+            # "Use This File" button
             if col4.button("📊 Use", key=f"use_{upload['id']}"):
                 st.session_state.save_path = upload['file_path']
                 st.success(f"✅ Now using: {upload['filename']}")
                 st.info("👈 Go to Dashboard or Sales Forecasting to analyze this file")
+            
+            # "Delete" button
+            if col5.button("🗑️ Delete", key=f"delete_{upload['id']}", type="secondary"):
+                # Confirm deletion
+                st.session_state[f'confirm_delete_{upload["id"]}'] = True
+        
+        # Handle deletion confirmations
+        for upload in uploads:
+            if st.session_state.get(f'confirm_delete_{upload["id"]}', False):
+                st.warning(f"⚠️ Are you sure you want to delete **{upload['filename']}**?")
+                col_yes, col_no, _ = st.columns([1, 1, 3])
+                
+                if col_yes.button("✅ Yes, Delete", key=f"confirm_yes_{upload['id']}"):
+                    try:
+                        # Delete from database
+                        delete_result = delete_upload(upload['id'], user['id'])
+                        
+                        if delete_result:
+                            # Try to delete physical file
+                            if os.path.exists(upload['file_path']):
+                                try:
+                                    os.remove(upload['file_path'])
+                                except Exception as e:
+                                    st.warning(f"⚠️ File deleted from database but couldn't delete physical file: {e}")
+                            
+                            # Clear from session state if it was the active file
+                            if st.session_state.get('save_path') == upload['file_path']:
+                                del st.session_state.save_path
+                            
+                            st.success(f"✅ Deleted: {upload['filename']}")
+                            del st.session_state[f'confirm_delete_{upload["id"]}']
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to delete file from database")
+                    except Exception as e:
+                        st.error(f"❌ Error deleting file: {e}")
+                
+                if col_no.button("❌ Cancel", key=f"confirm_no_{upload['id']}"):
+                    del st.session_state[f'confirm_delete_{upload["id"]}']
+                    st.rerun()
+    else:
+        st.info("📂 No uploaded files yet")
+    
+    st.markdown("---")
     
     # Feedback history
     st.markdown("### 💬 Your Feedback")
