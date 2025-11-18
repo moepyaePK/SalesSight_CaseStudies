@@ -3,12 +3,11 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from pages.data_upload import data_extraction
-from utilities import custom_sidebar,require_upload
+from utilities import custom_sidebar, require_upload
 from auth import is_logged_in
 from auth import logout
 import base64
 import os
-
 
 
 # ---- Page Config ----
@@ -120,17 +119,6 @@ if not is_logged_in():
     st.switch_page("Home.py")
     st.stop()
 
-from utilities import show_file_selector
-
-file_path = show_file_selector()
-
-if not file_path:
-    st.warning("⚠️ Please upload a CSV file first.")
-    st.page_link("pages/data_upload.py", label="👉 Go to Upload Page")
-    st.stop()
-
-df = pd.read_csv(file_path)
-
 # ---- If file not uploaded ----
 if "save_path" not in st.session_state:
     st.markdown(
@@ -143,6 +131,7 @@ if "save_path" not in st.session_state:
         """,
         unsafe_allow_html=True
     )
+    st.stop()
 else:
     # ---- Extract metrics ----
     metrics = data_extraction(st.session_state.save_path)
@@ -179,6 +168,7 @@ else:
                 st.altair_chart(chart, use_container_width=True)
             else:
                 st.info("No 'Date' column found for trend visualization.")
+        
         with right_col:
             st.subheader("🏆 Top Products")
             if metrics.get("top_products") is not None and not metrics["top_products"].empty:
@@ -186,6 +176,3 @@ else:
                     st.write(f"**{row['Product']}** — ${row['Sales']:,.0f}")
             else:
                 st.info("No 'Product' column found for ranking.")
-
-
-        
