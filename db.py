@@ -1,23 +1,35 @@
 from sqlalchemy import create_engine, text
-import re
+
+# Import the database URL from the central configuration file.
+# This decouples the database connection details from the code and removes hardcoded values.
+from config import DATABASE_URL
+
+# The database engine is the central point of contact for the application
+# with the database. It's configured once here using the URL from config.py.
+engine = create_engine(DATABASE_URL, echo=False)
 
 
-DB_PATH = "users.db"
-engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
-
-def is_valid_email(email):
+def init_db() -> None:
     """
-    Check if the provided email is valid.
-    Returns True if valid, False otherwise.
+    Initializes the database by creating all necessary tables.
+    This function serves as a single entry point for setting up the DB schema,
+    making it easy to manage database creation from the main application entry point.
     """
-    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    return re.match(pattern, email) is not None
+    create_users_table()
 
-def create_users_table():
+
+def create_users_table() -> None:
+    """
+    Creates the 'users' table in the database if it doesn't already exist.
+    This table is essential for the authentication system, storing user credentials.
+
+    Note: All user management logic (e.g., adding users, verifying credentials)
+    has been moved to the `auth.py` module to adhere to the Single Responsibility
+    Principle. This module, `db.py`, is now only concerned with schema and connection.
+    """
     with engine.connect() as conn:
-        # Drop existing table
         conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS users(
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -26,24 +38,10 @@ def create_users_table():
         """))
         conn.commit()
 
-def add_user(username, email, password):
-    """Add a new user with email validation"""
-    if not is_valid_email(email):
-        raise ValueError("Invalid email address")
-    with engine.connect() as conn:
-        conn.execute(
-            text("INSERT INTO users (username, email, password) VALUES (:u, :e, :p)"),
-            {"u": username, "e": email, "p": password}
-        )
-        conn.commit()
 
-def get_user(email, password):
-    """Verify if user exists by email and password"""
-    if not is_valid_email(email):
-        return None  
-    with engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT * FROM users WHERE email=:e AND password=:p"),
-            {"e": email, "p": password}
-        ).fetchone()
-        return result
+# User-related functions (add_user, get_user, is_valid_email) have been removed
+# from this file and moved to `auth.py`. This refactoring centralizes all
+# authentication and user management logic, making the system more modular,
+# secure, and maintainable. `auth.py` now acts as the single source of truth
+# for user management, and this `db.py` module is solely responsible for
+# database connection and schema setup.
