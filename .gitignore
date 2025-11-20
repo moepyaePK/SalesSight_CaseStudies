@@ -1,5 +1,16 @@
+# Virtual Environments
 venv/
-.venv
-tmp/
-_pycache_/
+.venv/
+
+# Environment variables
 .env
+
+# Python build artifacts
+__pycache__/
+*.pyc
+
+# Local database
+users.db
+
+# Temporary files
+tmp/

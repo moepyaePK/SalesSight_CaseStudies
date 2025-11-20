@@ -1,8 +1,8 @@
 import streamlit as st
-from auth import register_user , add_user
-from db import is_valid_email
+from auth import register_user
 
 # ---- Hide Sidebar Completely (including arrow + space) ----
+# This is a UI-specific enhancement and can remain as is.
 hide_sidebar_style = """
     <style>
         /* Hide the sidebar completely */
@@ -41,38 +41,32 @@ hide_sidebar_style = """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
 # --------------------------------------------------------
 
-
-
 st.title("📝 Register New Account")
-username = st.text_input("Username")
-email = st.text_input("Email")
-password = st.text_input("Password", type="password")
-confirm_password = st.text_input("Confirm Password", type="password")
 
-if st.button("Register"):
-    # Basic validation
-    if not username or not email or not password or not confirm_password:
-        st.warning("⚠️ Please fill in all fields.")
-    elif password != confirm_password:
-        st.warning("⚠️ Passwords do not match.")
-    elif not is_valid_email(email):
-        st.warning("⚠️ Invalid email address. Please enter a valid email.")
+# Use a form for better user experience
+with st.form("registration_form"):
+    username = st.text_input("Username")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    confirm_password = st.text_input("Confirm Password", type="password")
+    submitted = st.form_submit_button("Register")
+
+if submitted:
+    # Delegate all registration logic, including validation and user creation,
+    # to the centralized auth module.
+    success, message = register_user(username, email, password, confirm_password)
+
+    if success:
+        st.success(message)
+        st.info("Redirecting to login page...")
+        # The user might not see the message if we switch immediately.
+        # A small delay can improve UX, though st.switch_page is quite fast.
+        st.switch_page("pages/login.py")
     else:
-        try:
-            add_user(username, email, password)
-            st.switch_page("pages/login.py")
-            st.success("✅ Registration successful! You can now login.")
-            st.info("Go to the login page to access your account.")
-        except Exception as e:
-            if "UNIQUE constraint failed: users.username" in str(e):
-                st.error("⚠️ Username already exists. Choose another one.")
-            elif "UNIQUE constraint failed: users.email" in str(e):
-                st.error("⚠️ Email already registered. Try logging in.")
-            else:
-                st.error(f"⚠️ Registration failed: {e}")
-
+        # Display the specific error message returned from the auth module.
+        st.error(f"⚠️ {message}")
 
 st.markdown("---")
 st.write("Already have an account?")
-if st.button("📝 Login"):
+if st.button("Login"):
     st.switch_page("pages/login.py")

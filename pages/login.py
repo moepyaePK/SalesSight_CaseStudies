@@ -1,61 +1,41 @@
 import streamlit as st
-from auth import verify_user
-
-
+from auth import login_user
 
 # ---- Hide Sidebar Completely (including arrow + space) ----
+# This is kept for consistent UI experience on the login/register pages
+# as they are outside the main authenticated app flow.
 hide_sidebar_style = """
     <style>
-        /* Hide the sidebar completely */
-        [data-testid="stSidebar"], 
-        [data-testid="stSidebarNav"], 
-        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="stSidebar"],
+        [data-testid="stSidebarNav"],
+        [data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+        }
         section[data-testid="stSidebar"] {
             display: none !important;
         }
-
-        /* Hide the expand/collapse button (for older/newer versions) */
-        button[title="Expand sidebar"], 
-        button[kind="header"], 
-        [data-testid="baseButton-header"] {
-            display: none !important;
-        }
-
-        /* Remove sidebar space and expand main view fully */
         [data-testid="stAppViewContainer"] {
             margin-left: 0 !important;
             width: 100% !important;
-        }
-
-        /* Remove any internal padding */
-        [data-testid="stVerticalBlock"] > div:first-child {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        /* Optional: hide top navbar dropdown if present */
-        [data-testid="stHeaderActionElements"] {
-            display: none !important;
         }
     </style>
 """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
 # --------------------------------------------------------
 
-
-
 st.title("🔑 Login")
 
-email = st.text_input("Enter Email")
-password = st.text_input("Enter Password", type="password")
+with st.form("login_form"):
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    submitted = st.form_submit_button("Login")
 
-if st.button("Login"):
-    if verify_user(email, password):
-        # st.session_state["user"] = email
-        st.success("Login successful!")
-        st.switch_page("pages/data_upload.py")
-    else:
-        st.error("Invalid email or password.")
+    if submitted:
+        if login_user(email, password):
+            st.success("Login successful!")
+            st.switch_page("pages/data_upload.py")
+        else:
+            st.error("Invalid email or password.")
 
 st.markdown("---")
 st.write("Don't have an account yet?")
