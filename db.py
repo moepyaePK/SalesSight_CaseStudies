@@ -15,13 +15,23 @@ def is_valid_email(email):
 
 def create_users_table():
     with engine.connect() as conn:
-        # Drop existing table
+        # Create users table if it doesn't exist
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS users(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL
+            )
+        """))
+        # Create feedback table if it doesn't exist
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS feedback(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                feedback_text TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """))
         conn.commit()
@@ -47,3 +57,12 @@ def get_user(email, password):
             {"e": email, "p": password}
         ).fetchone()
         return result
+
+def add_feedback(user_id, feedback_text):
+    """Inserts a feedback record into the feedback table."""
+    with engine.connect() as conn:
+        conn.execute(
+            text("INSERT INTO feedback (user_id, feedback_text) VALUES (:user_id, :feedback_text)"),
+            {"user_id": user_id, "feedback_text": feedback_text}
+        )
+        conn.commit()
