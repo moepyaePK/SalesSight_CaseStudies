@@ -11,6 +11,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from auth import is_logged_in, logout
 from utils import require_upload, custom_sidebar
+from db import add_feedback
 
 st.set_page_config(page_title="SalesSight - Dashboard", layout="wide")
 
@@ -306,6 +307,27 @@ with right_col:
 
         st.markdown("<h4>✨ Recommended Actions</h4>", unsafe_allow_html=True)
         st.markdown(recommendations_text)
+
+        # ---- User Feedback Section ----
+        st.markdown("---")
+        st.subheader("Feedback")
+        st.markdown("Was this analysis helpful? Let us know what you think.")
+
+        feedback_text = st.text_area("Your feedback:", key="feedback_text_area", height=100)
+
+        if st.button("Submit Feedback"):
+            if feedback_text:
+                user_id = st.session_state.get("user_id")
+                if user_id:
+                    try:
+                        add_feedback(user_id=user_id, feedback_text=feedback_text)
+                        st.success("Thank you for your feedback! It has been submitted successfully.")
+                    except Exception as e:
+                        st.error(f"An error occurred while submitting your feedback: {e}")
+                else:
+                    st.error("Could not submit feedback. User not identified. Please log in again.")
+            else:
+                st.warning("Please enter some feedback before submitting.")
 
 
     else:
